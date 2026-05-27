@@ -11,14 +11,12 @@ const usersRoutes = require('./src/routes/users');
 const overviewRoutes = require('./src/routes/overview');
 const apiConnectionsRoutes = require('./src/routes/apiConnections');
 
+const fs = require('fs');
+
 const app = express();
 const PORT = process.env.PORT || 4000;
-const isProd = process.env.NODE_ENV === 'production';
 
-app.use(cors({
-  origin: isProd ? false : 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -32,8 +30,8 @@ app.use('/api/api-connections', apiConnectionsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
-if (isProd) {
-  const distPath = path.join(__dirname, '../frontend/dist');
+const distPath = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
 }
