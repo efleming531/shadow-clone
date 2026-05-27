@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(REP)
+  createdAt    DateTime @default(now())
+  lastLogin    DateTime?
+  isActive     Boolean  @default(true)
+
+  funnelDataCreated FunnelData[]
+  salesRep          SalesRep?
+  callCenterAgent   CallCenterAgent?
+
+  @@map("users")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  REP
+}
+
+model LeadSource {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  funnelData FunnelData[]
+  deals      Deal[]
+
+  @@map("lead_sources")
+}
+
+model FunnelData {
+  id               String      @id @default(cuid())
+  leadSource       LeadSource  @relation(fields: [leadSourceId], references: [id])
+  leadSourceId     String
+  date             DateTime
+  adSpend          Float       @default(0)
+  impressions      Int         @default(0)
+  clicks           Int         @default(0)
+  leadsGenerated   Int         @default(0)
+  formCompletions  Int         @default(0)
+  callsBooked      Int         @default(0)
+  callsShowed      Int         @default(0)
+  callsClosed      Int         @default(0)
+  revenue          Float       @default(0)
+  cashCollected    Float       @default(0)
+  leadQuality      LeadQuality @default(WARM)
+  notes            String?
+  createdBy        User        @relation(fields: [createdById], references: [id])
+  createdById      String
+  createdAt        DateTime    @default(now())
+
+  @@map("funnel_data")
+}
+
+enum LeadQuality {
+  HOT
+  WARM
+  COLD
+}
+
+model SalesRep {
+  id       String  @id @default(cuid())
+  user     User    @relation(fields: [userId], references: [id])
+  userId   String  @unique
+  name     String
+  isActive Boolean @default(true)
+
+  deals Deal[]
+
+  @@map("sales_reps")
+}
+
+model Deal {
+  id               String     @id @default(cuid())
+  salesRep         SalesRep   @relation(fields: [salesRepId], references: [id])
+  salesRepId       String
+  leadSource       LeadSource @relation(fields: [leadSourceId], references: [id])
+  leadSourceId     String
+  date             DateTime
+  revenue          Float
+  cashCollected    Float
+  installed        Boolean    @default(false)
+  referralGenerated Boolean   @default(false)
+  salesCycleDays   Int
+  notes            String?
+  createdAt        DateTime   @default(now())
+
+  @@map("deals")
+}
+
+model CallCenterAgent {
+  id       String  @id @default(cuid())
+  user     User    @relation(fields: [userId], references: [id])
+  userId   String  @unique
+  name     String
+  isActive Boolean @default(true)
+
+  logs CallCenterLog[]
+
+  @@map("call_center_agents")
+}
+
+model CallCenterLog {
+  id                 String          @id @default(cuid())
+  agent              CallCenterAgent @relation(fields: [agentId], references: [id])
+  agentId            String
+  date               DateTime
+  speedToLeadMinutes Float
+  answered           Boolean
+  qualified          Boolean
+  booked             Boolean
+  notes              String?
+  createdAt          DateTime        @default(now())
+
+  @@map("call_center_logs")
+}
+
+model ApiConnection {
+  id         String    @id @default(cuid())
+  provider   String    @unique
+  apiKey     String?
+  isActive   Boolean   @default(false)
+  lastSynced DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@map("api_connections")
+}

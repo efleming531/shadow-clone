@@ -1,0 +1,17 @@
+{
+  "name": "attic-fanatics-dashboard",
+  "version": "1.0.0",
+  "description": "Attic Fanatics Funnel Analyzer — Full Stack",
+  "scripts": {
+    "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "db:migrate": "cd backend && npx prisma migrate dev",
+    "db:seed": "cd backend && node prisma/seed.js",
+    "db:reset": "cd backend && npx prisma migrate reset --force && node prisma/seed.js",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
