@@ -2,6 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+
+const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL'];
+const missing = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missing.length) {
+  console.error(`FATAL: Missing required environment variables: ${missing.join(', ')}`);
+  process.exit(1);
+}
 
 const authRoutes = require('./src/routes/auth');
 const funnelRoutes = require('./src/routes/funnel');
@@ -10,8 +18,6 @@ const callCenterRoutes = require('./src/routes/callCenter');
 const usersRoutes = require('./src/routes/users');
 const overviewRoutes = require('./src/routes/overview');
 const apiConnectionsRoutes = require('./src/routes/apiConnections');
-
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
