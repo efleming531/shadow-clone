@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const authRoutes = require('./src/routes/auth');
 const funnelRoutes = require('./src/routes/funnel');
@@ -12,8 +13,12 @@ const apiConnectionsRoutes = require('./src/routes/apiConnections');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const isProd = process.env.NODE_ENV === 'production';
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: isProd ? false : 'http://localhost:3000',
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -26,6 +31,12 @@ app.use('/api/users', usersRoutes);
 app.use('/api/api-connections', apiConnectionsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+
+if (isProd) {
+  const distPath = path.join(__dirname, '../frontend/dist');
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
+}
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
