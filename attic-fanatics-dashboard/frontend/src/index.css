@@ -26,8 +26,56 @@ body {
 }
 
 .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+.animate-slide-in { animation: slideIn 0.25s ease-out; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Kanban drag styles */
+.kanban-card-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.kanban-column-over {
+  border-color: #f97316 !important;
+  background-color: rgba(249, 115, 22, 0.05) !important;
+}
+
+/* Input / form styles */
+.forge-input {
+  background: #161616;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.forge-input:focus {
+  outline: none;
+  border-color: #333333;
+}
+
+.forge-input::placeholder { color: #6b7280; }
+
+select.forge-input option { background: #161616; }
+
+/* Prose for markdown */
+.forge-prose h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; color: #ffffff; }
+.forge-prose h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #ffffff; }
+.forge-prose h3 { font-size: 1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #e5e7eb; }
+.forge-prose p { color: #9ca3af; margin-bottom: 0.75rem; line-height: 1.6; }
+.forge-prose ul, .forge-prose ol { color: #9ca3af; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+.forge-prose li { margin-bottom: 0.25rem; }
+.forge-prose code { background: #1e1e1e; padding: 2px 6px; border-radius: 4px; font-size: 0.875em; color: #f97316; }
+.forge-prose strong { color: #ffffff; }

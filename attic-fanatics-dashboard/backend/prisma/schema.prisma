@@ -7,27 +7,103 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(REP)
-  createdAt    DateTime @default(now())
-  lastLogin    DateTime?
-  isActive     Boolean  @default(true)
-
-  funnelDataCreated FunnelData[]
-  salesRep          SalesRep?
-  callCenterAgent   CallCenterAgent?
-
-  @@map("users")
-}
+// ── Enums ──────────────────────────────────────────────────────────────────
 
 enum Role {
   OWNER
   MANAGER
   REP
+}
+
+enum LeadQuality {
+  HOT
+  WARM
+  COLD
+}
+
+enum LeadStage {
+  NEW
+  CONTACTED
+  QUALIFIED
+  ESTIMATE_SENT
+  NEGOTIATING
+  WON
+  LOST
+  UNQUALIFIED
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  SMS
+  VISIT
+  NOTE
+  FOLLOW_UP
+}
+
+enum EstimateStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum JobStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum MembershipStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAUSED
+}
+
+enum CommissionType {
+  PERCENTAGE
+  FLAT
+  TIERED
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  PAID
+  DISPUTED
+}
+
+// ── Core ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         Role      @default(REP)
+  createdAt    DateTime  @default(now())
+  lastLogin    DateTime?
+  isActive     Boolean   @default(true)
+
+  funnelDataCreated  FunnelData[]
+  salesRep           SalesRep?
+  callCenterAgent    CallCenterAgent?
+  leadStageHistories LeadStageHistory[]
+  leadActivities     LeadActivity[]
+  estimates          Estimate[]
+  sops               SOP[]
+
+  @@map("users")
 }
 
 model LeadSource {
@@ -37,38 +113,33 @@ model LeadSource {
 
   funnelData FunnelData[]
   deals      Deal[]
+  leads      Lead[]
 
   @@map("lead_sources")
 }
 
 model FunnelData {
-  id               String      @id @default(cuid())
-  leadSource       LeadSource  @relation(fields: [leadSourceId], references: [id])
-  leadSourceId     String
-  date             DateTime
-  adSpend          Float       @default(0)
-  impressions      Int         @default(0)
-  clicks           Int         @default(0)
-  leadsGenerated   Int         @default(0)
-  formCompletions  Int         @default(0)
-  callsBooked      Int         @default(0)
-  callsShowed      Int         @default(0)
-  callsClosed      Int         @default(0)
-  revenue          Float       @default(0)
-  cashCollected    Float       @default(0)
-  leadQuality      LeadQuality @default(WARM)
-  notes            String?
-  createdBy        User        @relation(fields: [createdById], references: [id])
-  createdById      String
-  createdAt        DateTime    @default(now())
+  id              String      @id @default(cuid())
+  leadSource      LeadSource  @relation(fields: [leadSourceId], references: [id])
+  leadSourceId    String
+  date            DateTime
+  adSpend         Float       @default(0)
+  impressions     Int         @default(0)
+  clicks          Int         @default(0)
+  leadsGenerated  Int         @default(0)
+  formCompletions Int         @default(0)
+  callsBooked     Int         @default(0)
+  callsShowed     Int         @default(0)
+  callsClosed     Int         @default(0)
+  revenue         Float       @default(0)
+  cashCollected   Float       @default(0)
+  leadQuality     LeadQuality @default(WARM)
+  notes           String?
+  createdBy       User        @relation(fields: [createdById], references: [id])
+  createdById     String
+  createdAt       DateTime    @default(now())
 
   @@map("funnel_data")
-}
-
-enum LeadQuality {
-  HOT
-  WARM
-  COLD
 }
 
 model SalesRep {
@@ -78,25 +149,30 @@ model SalesRep {
   name     String
   isActive Boolean @default(true)
 
-  deals Deal[]
+  deals             Deal[]
+  leads             Lead[]
+  jobs              Job[]
+  commissionPayouts CommissionPayout[]
 
   @@map("sales_reps")
 }
 
 model Deal {
-  id               String     @id @default(cuid())
-  salesRep         SalesRep   @relation(fields: [salesRepId], references: [id])
-  salesRepId       String
-  leadSource       LeadSource @relation(fields: [leadSourceId], references: [id])
-  leadSourceId     String
-  date             DateTime
-  revenue          Float
-  cashCollected    Float
-  installed        Boolean    @default(false)
-  referralGenerated Boolean   @default(false)
-  salesCycleDays   Int
-  notes            String?
-  createdAt        DateTime   @default(now())
+  id                String     @id @default(cuid())
+  salesRep          SalesRep   @relation(fields: [salesRepId], references: [id])
+  salesRepId        String
+  leadSource        LeadSource @relation(fields: [leadSourceId], references: [id])
+  leadSourceId      String
+  date              DateTime
+  revenue           Float
+  cashCollected     Float
+  installed         Boolean    @default(false)
+  referralGenerated Boolean    @default(false)
+  salesCycleDays    Int
+  notes             String?
+  createdAt         DateTime   @default(now())
+
+  commissionPayout CommissionPayout?
 
   @@map("deals")
 }
@@ -137,4 +213,292 @@ model ApiConnection {
   createdAt  DateTime  @default(now())
 
   @@map("api_connections")
+}
+
+// ── CRM Pipeline ───────────────────────────────────────────────────────────
+
+model Lead {
+  id             String     @id @default(cuid())
+  name           String
+  phone          String?
+  email          String?
+  address        String?
+  city           String?
+  state          String?
+  zip            String?
+  leadSource     LeadSource @relation(fields: [leadSourceId], references: [id])
+  leadSourceId   String
+  stage          LeadStage  @default(NEW)
+  assignedRep    SalesRep?  @relation(fields: [assignedRepId], references: [id])
+  assignedRepId  String?
+  estimatedValue Float?
+  notes          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  stageHistory LeadStageHistory[]
+  activities   LeadActivity[]
+  estimates    Estimate[]
+  job          Job?
+  customer     Customer?
+
+  @@map("leads")
+}
+
+model LeadStageHistory {
+  id          String     @id @default(cuid())
+  lead        Lead       @relation(fields: [leadId], references: [id])
+  leadId      String
+  fromStage   LeadStage?
+  toStage     LeadStage
+  changedBy   User       @relation(fields: [changedById], references: [id])
+  changedById String
+  changedAt   DateTime   @default(now())
+  note        String?
+
+  @@map("lead_stage_history")
+}
+
+model LeadActivity {
+  id          String       @id @default(cuid())
+  lead        Lead         @relation(fields: [leadId], references: [id])
+  leadId      String
+  type        ActivityType
+  subject     String
+  body        String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime     @default(now())
+
+  @@map("lead_activities")
+}
+
+// ── Estimating ─────────────────────────────────────────────────────────────
+
+model MaterialsDB {
+  id          String   @id @default(cuid())
+  category    String
+  name        String
+  unit        String
+  costPerUnit Float
+  markupPct   Float    @default(40)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("materials_db")
+}
+
+model Estimate {
+  id          String         @id @default(cuid())
+  lead        Lead           @relation(fields: [leadId], references: [id])
+  leadId      String
+  number      String         @unique
+  status      EstimateStatus @default(DRAFT)
+  lineItems   Json
+  subtotal    Float
+  tax         Float          @default(0)
+  discount    Float          @default(0)
+  total       Float
+  validUntil  DateTime?
+  sentAt      DateTime?
+  acceptedAt  DateTime?
+  notes       String?
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@map("estimates")
+}
+
+// ── Jobs & Customers ───────────────────────────────────────────────────────
+
+model Customer {
+  id        String   @id @default(cuid())
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+  leadId    String?  @unique
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  city      String?
+  state     String?
+  zip       String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  jobs        Job[]
+  memberships Membership[]
+  reviews     Review[]
+
+  @@map("customers")
+}
+
+model Job {
+  id            String    @id @default(cuid())
+  jobNumber     String    @unique
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  customerId    String
+  lead          Lead?     @relation(fields: [leadId], references: [id])
+  leadId        String?   @unique
+  assignedRep   SalesRep? @relation(fields: [assignedRepId], references: [id])
+  assignedRepId String?
+  status        JobStatus @default(SCHEDULED)
+  scheduledDate DateTime?
+  completedDate DateTime?
+  serviceType   String
+  description   String?
+  totalRevenue  Float     @default(0)
+  cashCollected Float     @default(0)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("jobs")
+}
+
+// ── Membership ─────────────────────────────────────────────────────────────
+
+model MembershipPlan {
+  id           String       @id @default(cuid())
+  name         String
+  price        Float
+  billingCycle BillingCycle
+  features     String[]
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  memberships Membership[]
+
+  @@map("membership_plans")
+}
+
+model Membership {
+  id          String           @id @default(cuid())
+  customer    Customer         @relation(fields: [customerId], references: [id])
+  customerId  String
+  plan        MembershipPlan   @relation(fields: [planId], references: [id])
+  planId      String
+  status      MembershipStatus @default(ACTIVE)
+  startDate   DateTime
+  renewalDate DateTime?
+  cancelledAt DateTime?
+  notes       String?
+  createdAt   DateTime         @default(now())
+
+  @@map("memberships")
+}
+
+// ── Reputation ─────────────────────────────────────────────────────────────
+
+model Review {
+  id           String    @id @default(cuid())
+  customer     Customer? @relation(fields: [customerId], references: [id])
+  customerId   String?
+  platform     String
+  rating       Int
+  reviewText   String?
+  reviewDate   DateTime
+  responded    Boolean   @default(false)
+  responseText String?
+  createdAt    DateTime  @default(now())
+
+  @@map("reviews")
+}
+
+// ── Automation & SOPs ──────────────────────────────────────────────────────
+
+model AutomationSequence {
+  id        String   @id @default(cuid())
+  name      String
+  trigger   String
+  steps     Json
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("automation_sequences")
+}
+
+model SOP {
+  id          String   @id @default(cuid())
+  title       String
+  category    String
+  content     String
+  version     Int      @default(1)
+  isActive    Boolean  @default(true)
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("sops")
+}
+
+// ── Commission Engine ──────────────────────────────────────────────────────
+
+model CommissionRule {
+  id             String         @id @default(cuid())
+  name           String
+  roleTarget     Role
+  type           CommissionType
+  rate           Float
+  bonusThreshold Float?
+  bonusRate      Float?
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+
+  payouts CommissionPayout[]
+
+  @@map("commission_rules")
+}
+
+model CommissionPayout {
+  id         String         @id @default(cuid())
+  salesRep   SalesRep       @relation(fields: [salesRepId], references: [id])
+  salesRepId String
+  rule       CommissionRule @relation(fields: [ruleId], references: [id])
+  ruleId     String
+  deal       Deal?          @relation(fields: [dealId], references: [id])
+  dealId     String?        @unique
+  amount     Float
+  status     PayoutStatus   @default(PENDING)
+  period     String
+  paidAt     DateTime?
+  notes      String?
+  createdAt  DateTime       @default(now())
+
+  @@map("commission_payouts")
+}
+
+// ── Alerts ─────────────────────────────────────────────────────────────────
+
+model AlertRule {
+  id        String    @id @default(cuid())
+  name      String
+  metric    String
+  condition String
+  threshold Float
+  period    String    @default("daily")
+  isActive  Boolean   @default(true)
+  lastFired DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("alert_rules")
+}
+
+// ── Territory ──────────────────────────────────────────────────────────────
+
+model TerritoryData {
+  id        String   @id @default(cuid())
+  zipCode   String   @unique
+  city      String
+  state     String
+  dealCount Int      @default(0)
+  revenue   Float    @default(0)
+  leadCount Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("territory_data")
 }
