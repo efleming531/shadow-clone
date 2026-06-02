@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 
 const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL'];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
@@ -66,11 +65,14 @@ app.use('/api/materials', materialsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
-const distPath = path.join(__dirname, '../frontend/dist');
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
-}
+// Serve static files from the built React frontend
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Catch-all route: serve index.html for any route not matched by API endpoints
+// This allows React Router to handle client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
