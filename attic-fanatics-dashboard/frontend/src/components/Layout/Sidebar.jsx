@@ -105,9 +105,9 @@ export default function Sidebar({ collapsed, onClose }) {
         <div className="p-4 border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2 mb-0.5">
             <ForgeIcon />
-            <span className="font-black text-sm tracking-widest text-white uppercase">Attic Fanatics</span>
+            <span className="font-black text-sm tracking-widest text-white uppercase">FORGE</span>
           </div>
-          <p className="text-[10px] text-accent font-semibold uppercase tracking-widest ml-7 opacity-70">The Forge</p>
+          <p className="text-[10px] text-accent font-semibold uppercase tracking-widest ml-7 opacity-70">Business OS</p>
         </div>
 
         {/* Nav */}

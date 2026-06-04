@@ -197,6 +197,23 @@ router.post('/:id/activities', authenticate, async (req, res) => {
   }
 });
 
+router.delete('/bulk', authenticate, requireRole('OWNER', 'MANAGER'), async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array required' });
+
+    await prisma.leadActivity.deleteMany({ where: { leadId: { in: ids } } });
+    await prisma.leadStageHistory.deleteMany({ where: { leadId: { in: ids } } });
+    await prisma.estimate.deleteMany({ where: { leadId: { in: ids } } });
+    await prisma.lead.deleteMany({ where: { id: { in: ids } } });
+
+    res.json({ deleted: ids.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 router.delete('/:id', authenticate, requireRole('OWNER'), async (req, res) => {
   try {
     await prisma.leadActivity.deleteMany({ where: { leadId: req.params.id } });

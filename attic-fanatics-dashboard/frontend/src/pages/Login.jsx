@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const FlameIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-    <path d="M12 2C12 2 8 8 8 13C8 15.761 9.791 18 12 18C14.209 18 16 15.761 16 13C16 10.5 14.5 8 13 6.5C14 9 15 11 15 13C15 15.761 13.657 17 12 17C10.343 17 9 15.761 9 13C9 8 12 2 12 2Z" fill="#f97316"/>
-    <ellipse cx="12" cy="20.5" rx="4" ry="2.5" fill="#f97316" opacity="0.5"/>
+const ForgeIcon = () => (
+  <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2L9 7C9 9 10 11 12 12C14 11 15 9 15 7L12 2Z" fill="#f97316" />
+    <path d="M12 12C9.8 12 8 13.8 8 16C8 18.2 9.8 20 12 20C14.2 20 16 18.2 16 16C16 13.8 14.2 12 12 12Z" fill="#f97316" opacity="0.7" />
+    <path d="M6 8L3 14L7 15L6 8Z" fill="#f97316" opacity="0.4" />
+    <path d="M18 8L21 14L17 15L18 8Z" fill="#f97316" opacity="0.4" />
   </svg>
 );
 
@@ -35,13 +37,13 @@ export default function Login() {
     <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-center">
-              <FlameIcon />
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-center">
+              <ForgeIcon />
             </div>
           </div>
-          <h1 className="font-black text-2xl tracking-widest uppercase text-white">Attic Fanatics</h1>
-          <p className="text-text-secondary text-sm mt-1">Performance Dashboard</p>
+          <h1 className="font-black text-3xl tracking-widest uppercase text-white">FORGE</h1>
+          <p className="text-text-secondary text-sm mt-1 tracking-wide">Business Operating System</p>
         </div>
 
         <div className="bg-bg-card border border-border rounded-2xl p-6 shadow-2xl">
@@ -53,7 +55,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="you@atticfanatics.com"
+                placeholder="you@yourcompany.com"
                 className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
                 autoComplete="email"
               />
@@ -79,9 +81,7 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-text-muted mt-4">
-          Attic Fanatics · NJ / NY / PA · atticfanatics.com
-        </p>
+        <p className="text-center text-xs text-text-muted mt-4">FORGE · Powered by data</p>
       </div>
     </div>
   );
