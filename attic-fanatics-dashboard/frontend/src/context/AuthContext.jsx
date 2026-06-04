@@ -36,13 +36,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((updated) => {
+    setUser(updated);
+    localStorage.setItem('af_user', JSON.stringify(updated));
+  }, []);
+
   const isOwner = user?.role === 'OWNER';
   const isManager = user?.role === 'MANAGER';
   const isRep = user?.role === 'REP';
   const canManageData = isOwner || isManager;
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isOwner, isManager, isRep, canManageData }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser, isOwner, isManager, isRep, canManageData }}>
       {children}
     </AuthContext.Provider>
   );

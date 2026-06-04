@@ -85,4 +85,18 @@ router.patch('/:id', authenticate, requireRole('OWNER', 'MANAGER'), async (req, 
   }
 });
 
+router.delete('/:id', authenticate, requireRole('OWNER', 'MANAGER'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.membership.deleteMany({ where: { customerId: id } });
+    await prisma.review.deleteMany({ where: { customerId: id } });
+    await prisma.job.deleteMany({ where: { customerId: id } });
+    await prisma.customer.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

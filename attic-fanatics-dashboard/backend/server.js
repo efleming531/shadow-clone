@@ -32,6 +32,7 @@ const alertsRoutes = require('./src/routes/alerts');
 const sopsRoutes = require('./src/routes/sops');
 const unitEconomicsRoutes = require('./src/routes/unitEconomics');
 const materialsRoutes = require('./src/routes/materials');
+const pipelineRoutes = require('./src/routes/pipeline');
 
 const { startAlertChecker } = require('./src/jobs/alertChecker');
 
@@ -63,6 +64,7 @@ app.use('/api/alerts', alertsRoutes);
 app.use('/api/sops', sopsRoutes);
 app.use('/api/unit-economics', unitEconomicsRoutes);
 app.use('/api/materials', materialsRoutes);
+app.use('/api/pipeline-stages', pipelineRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

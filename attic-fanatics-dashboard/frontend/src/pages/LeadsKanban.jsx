@@ -8,16 +8,7 @@ import toast from 'react-hot-toast';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/UI/Modal';
-
-const STAGES = [
-  { key: 'NEW', label: 'New', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-  { key: 'CONTACTED', label: 'Contacted', color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' },
-  { key: 'QUALIFIED', label: 'Qualified', color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20' },
-  { key: 'ESTIMATE_SENT', label: 'Estimate Sent', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20' },
-  { key: 'NEGOTIATING', label: 'Negotiating', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
-  { key: 'WON', label: 'Won', color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20' },
-  { key: 'LOST', label: 'Lost', color: 'text-gray-400', bg: 'bg-gray-500/10 border-gray-500/20' },
-];
+import { getText, getKanban } from '../utils/stageColors';
 
 const fmtCurrency = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n || 0}`;
 
@@ -91,6 +82,7 @@ function KanbanColumn({ stage, leads, isOver }) {
 
 export default function LeadsKanban() {
   const [kanban, setKanban] = useState({});
+  const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState(null);
   const [activeLead, setActiveLead] = useState(null);
@@ -105,6 +97,7 @@ export default function LeadsKanban() {
 
   useEffect(() => {
     loadKanban();
+    api.get('/pipeline-stages').then(r => setStages(r.data)).catch(() => {});
     api.get('/funnel/sources').then(r => setSources(r.data)).catch(() => {});
     api.get('/sales/leaderboard').then(r => setReps(r.data?.reps || r.data || [])).catch(() => {});
   }, []);
@@ -155,7 +148,7 @@ export default function LeadsKanban() {
     if (!over) return;
 
     const fromStage = findStageForLead(active.id);
-    const toStage = STAGES.find(s => s.key === over.id)?.key || findStageForLead(over.id);
+    const toStage = stages.find(s => s.slug === over.id)?.slug || findStageForLead(over.id);
 
     if (!fromStage || !toStage || fromStage === toStage) return;
 
@@ -171,7 +164,7 @@ export default function LeadsKanban() {
 
     try {
       await api.patch(`/leads/${active.id}`, { stage: toStage });
-      toast.success(`Moved to ${STAGES.find(s => s.key === toStage)?.label}`);
+      toast.success(`Moved to ${stages.find(s => s.slug === toStage)?.label ?? toStage}`);
     } catch {
       toast.error('Failed to update stage');
       loadKanban();
@@ -191,8 +184,9 @@ export default function LeadsKanban() {
     }
   }
 
+  const terminalSlugs = stages.filter(s => s.isWon || s.isLost).map(s => s.slug);
   const totalPipelineValue = Object.entries(kanban)
-    .filter(([s]) => !['WON', 'LOST', 'UNQUALIFIED'].includes(s))
+    .filter(([s]) => !terminalSlugs.includes(s))
     .reduce((sum, [, leads]) => sum + leads.reduce((s, l) => s + (l.estimatedValue || 0), 0), 0);
 
   if (loading) {
@@ -203,7 +197,7 @@ export default function LeadsKanban() {
           <div className="h-9 w-32 bg-bg-elevated rounded animate-pulse" />
         </div>
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {STAGES.map(s => <div key={s.key} className="flex-shrink-0 w-64 h-96 bg-bg-card rounded-xl border border-border animate-pulse" />)}
+          {[1, 2, 3, 4, 5].map(i => <div key={i} className="flex-shrink-0 w-64 h-96 bg-bg-card rounded-xl border border-border animate-pulse" />)}
         </div>
       </div>
     );
@@ -235,14 +229,17 @@ export default function LeadsKanban() {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-4 h-full pb-4">
-            {STAGES.map(stage => (
-              <KanbanColumn
-                key={stage.key}
-                stage={stage}
-                leads={kanban[stage.key] || []}
-                isOver={overId === stage.key}
-              />
-            ))}
+            {stages.map(s => {
+              const stage = { key: s.slug, label: s.label, color: getText(s.color), bg: getKanban(s.color) };
+              return (
+                <KanbanColumn
+                  key={s.slug}
+                  stage={stage}
+                  leads={kanban[s.slug] || []}
+                  isOver={overId === s.slug}
+                />
+              );
+            })}
           </div>
           <DragOverlay>
             {activeLead && <LeadCard lead={activeLead} />}

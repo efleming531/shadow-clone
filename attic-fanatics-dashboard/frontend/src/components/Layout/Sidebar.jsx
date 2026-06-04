@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const ForgeIcon = () => (
@@ -142,23 +142,28 @@ export default function Sidebar({ collapsed, onClose }) {
           <SectionLabel label="Operations" />
           <NavItem to="/sops" icon="📚" label="SOPs" />
           {canManageData && <NavItem to="/alerts" icon="🔔" label="Alerts" />}
+          {canManageData && <NavItem to="/pipeline-settings" icon="◈" label="Pipeline Stages" />}
           {canManageData && <NavItem to="/data-entry" icon="✎" label="Data Entry" />}
           {isOwner && <NavItem to="/settings" icon="⚙" label="User Management" />}
         </nav>
 
         {/* User footer */}
         <div className="p-3 border-t border-border flex-shrink-0">
-          <div className="flex items-center gap-3 px-3 py-2 mb-1">
+          <Link
+            to="/profile"
+            className="flex items-center gap-3 px-3 py-2 mb-1 rounded-lg hover:bg-white/5 transition-colors group"
+          >
             <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-accent font-bold text-sm flex-shrink-0">
               {user?.name?.[0]?.toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
+              <p className="text-xs font-semibold text-white truncate group-hover:text-accent transition-colors">{user?.name}</p>
               <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold ${roleBadgeColor[user?.role]}`}>
                 {user?.role}
               </span>
             </div>
-          </div>
+            <span className="text-text-muted text-xs opacity-0 group-hover:opacity-100 transition-opacity">⚙</span>
+          </Link>
           <button
             onClick={logout}
             className="w-full px-3 py-2 text-xs text-text-secondary hover:text-white hover:bg-white/5 rounded-lg transition-all text-left"

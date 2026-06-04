@@ -29,6 +29,8 @@ import TerritoryPage from './pages/TerritoryPage';
 import AlertsPage from './pages/AlertsPage';
 import SOPsPage from './pages/SOPsPage';
 import UnitEconomicsPage from './pages/UnitEconomicsPage';
+import ProfilePage from './pages/ProfilePage';
+import PipelineSettingsPage from './pages/PipelineSettingsPage';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
@@ -90,6 +92,8 @@ const AppRoutes = () => {
         <Route path="alerts" element={<ProtectedRoute requiredRole="OWNER_MANAGER"><AlertsPage /></ProtectedRoute>} />
         <Route path="data-entry" element={<ProtectedRoute requiredRole="OWNER_MANAGER"><DataEntry /></ProtectedRoute>} />
         <Route path="settings" element={<ProtectedRoute requiredRole="OWNER"><UserManagement /></ProtectedRoute>} />
+        <Route path="pipeline-settings" element={<ProtectedRoute requiredRole="OWNER_MANAGER"><PipelineSettingsPage /></ProtectedRoute>} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

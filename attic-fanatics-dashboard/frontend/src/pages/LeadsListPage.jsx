@@ -3,17 +3,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-
-const STAGE_COLORS = {
-  NEW: 'bg-blue-500/15 text-blue-400',
-  CONTACTED: 'bg-purple-500/15 text-purple-400',
-  QUALIFIED: 'bg-yellow-500/15 text-yellow-400',
-  ESTIMATE_SENT: 'bg-orange-500/15 text-orange-400',
-  NEGOTIATING: 'bg-red-500/15 text-red-400',
-  WON: 'bg-green-500/15 text-green-400',
-  LOST: 'bg-gray-500/15 text-gray-400',
-  UNQUALIFIED: 'bg-gray-700/30 text-gray-500',
-};
+import { getBadge } from '../utils/stageColors';
 
 function exportLeadsToPDF(leads) {
   const rows = leads.map(l => `
@@ -87,7 +77,12 @@ export default function LeadsListPage() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [stages, setStages] = useState([]);
   const { canManageData } = useAuth();
+
+  useEffect(() => {
+    api.get('/pipeline-stages').then(r => setStages(r.data)).catch(() => {});
+  }, []);
 
   const loadLeads = useCallback(async () => {
     setLoading(true);
@@ -181,8 +176,8 @@ export default function LeadsListPage() {
         />
         <select className="forge-input w-44" value={stageFilter} onChange={e => setStageFilter(e.target.value)}>
           <option value="">All Stages</option>
-          {['NEW', 'CONTACTED', 'QUALIFIED', 'ESTIMATE_SENT', 'NEGOTIATING', 'WON', 'LOST', 'UNQUALIFIED'].map(s => (
-            <option key={s} value={s}>{s.replace('_', ' ')}</option>
+          {stages.map(s => (
+            <option key={s.slug} value={s.slug}>{s.label}</option>
           ))}
         </select>
       </div>
@@ -260,8 +255,8 @@ export default function LeadsListPage() {
                     {l.phone && <p className="text-xs text-text-muted">{l.phone}</p>}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STAGE_COLORS[l.stage]}`}>
-                      {l.stage.replace('_', ' ')}
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${getBadge(stages.find(s => s.slug === l.stage)?.color ?? 'gray')}`}>
+                      {stages.find(s => s.slug === l.stage)?.label ?? l.stage.replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-text-secondary">{l.leadSource?.name}</td>

@@ -36,4 +36,38 @@ router.get('/me', authenticate, async (req, res) => {
   res.json({ id, name, email, role });
 });
 
+router.patch('/me', authenticate, async (req, res) => {
+  try {
+    const { name, email, currentPassword, newPassword } = req.body;
+
+    if (newPassword) {
+      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+      const valid = await bcrypt.compare(currentPassword || '', user.passwordHash);
+      if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
+      if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+
+    const data = {};
+    if (name?.trim()) data.name = name.trim();
+    if (email?.trim()) {
+      const existing = await prisma.user.findFirst({
+        where: { email: email.toLowerCase(), NOT: { id: req.user.id } },
+      });
+      if (existing) return res.status(400).json({ error: 'Email already in use' });
+      data.email = email.toLowerCase().trim();
+    }
+    if (newPassword) data.passwordHash = await bcrypt.hash(newPassword, 10);
+
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data,
+      select: { id: true, name: true, email: true, role: true },
+    });
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

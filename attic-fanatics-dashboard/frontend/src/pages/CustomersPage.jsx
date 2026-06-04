@@ -39,6 +39,17 @@ export default function CustomersPage() {
     } catch { toast.error('Failed to create customer'); }
   }
 
+  async function handleDelete(c, e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(`Permanently delete "${c.name}"? This will also remove their jobs and memberships.`)) return;
+    try {
+      await api.delete(`/customers/${c.id}`);
+      toast.success('Customer deleted');
+      loadCustomers();
+    } catch { toast.error('Failed to delete customer'); }
+  }
+
   return (
     <div className="p-6 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
@@ -69,20 +80,30 @@ export default function CustomersPage() {
           {customers.length === 0 ? (
             <div className="col-span-3 text-center py-12 text-text-muted text-sm">No customers found</div>
           ) : customers.map(c => (
-            <Link key={c.id} to={`/customers/${c.id}`} className="bg-bg-card border border-border rounded-xl p-4 hover:border-border-focus transition-all">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold text-text-primary">{c.name}</p>
-                  {c.phone && <p className="text-sm text-text-secondary mt-0.5">{c.phone}</p>}
-                  {c.email && <p className="text-xs text-text-muted truncate mt-0.5">{c.email}</p>}
-                  {c.city && <p className="text-xs text-text-muted mt-0.5">{c.city}, {c.state}</p>}
+            <div key={c.id} className="relative group">
+              <Link to={`/customers/${c.id}`} className="block bg-bg-card border border-border rounded-xl p-4 hover:border-border-focus transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 pr-2">
+                    <p className="font-semibold text-text-primary">{c.name}</p>
+                    {c.phone && <p className="text-sm text-text-secondary mt-0.5">{c.phone}</p>}
+                    {c.email && <p className="text-xs text-text-muted truncate mt-0.5">{c.email}</p>}
+                    {c.city && <p className="text-xs text-text-muted mt-0.5">{c.city}, {c.state}</p>}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    {c._count?.jobs > 0 && <p className="text-xs text-text-muted">{c._count.jobs} job{c._count.jobs !== 1 ? 's' : ''}</p>}
+                    {c._count?.memberships > 0 && <p className="text-xs text-green-400">Member</p>}
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  {c._count?.jobs > 0 && <p className="text-xs text-text-muted">{c._count.jobs} job{c._count.jobs !== 1 ? 's' : ''}</p>}
-                  {c._count?.memberships > 0 && <p className="text-xs text-green-400">Member</p>}
-                </div>
-              </div>
-            </Link>
+              </Link>
+              {canManageData && (
+                <button
+                  onClick={(e) => handleDelete(c, e)}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-2 py-1 rounded-lg transition-all"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}

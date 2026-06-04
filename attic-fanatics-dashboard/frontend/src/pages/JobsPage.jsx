@@ -22,7 +22,7 @@ export default function JobsPage() {
   const [customers, setCustomers] = useState([]);
   const [reps, setReps] = useState([]);
   const [form, setForm] = useState({ customerId: '', serviceType: '', scheduledDate: '', totalRevenue: '', assignedRepId: '', description: '' });
-  const { canManageData } = useAuth();
+  const { canManageData, isOwner } = useAuth();
 
   useEffect(() => { loadJobs(); loadStats(); }, [statusFilter]);
 
@@ -47,6 +47,15 @@ export default function JobsPage() {
     api.get('/customers').then(r => setCustomers(r.data)).catch(() => {});
     api.get('/sales/leaderboard').then(r => setReps(r.data?.reps || r.data || [])).catch(() => {});
   }, []);
+
+  async function handleDelete(j) {
+    if (!window.confirm(`Permanently delete job ${j.jobNumber}?`)) return;
+    try {
+      await api.delete(`/jobs/${j.id}`);
+      toast.success('Job deleted');
+      loadJobs(); loadStats();
+    } catch { toast.error('Failed to delete job'); }
+  }
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -108,16 +117,16 @@ export default function JobsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                {['Job #', 'Customer', 'Service', 'Status', 'Scheduled', 'Revenue', 'Rep'].map(h => (
+                {['Job #', 'Customer', 'Service', 'Status', 'Scheduled', 'Revenue', 'Rep', ''].map(h => (
                   <th key={h} className="text-left text-xs font-semibold text-text-muted uppercase tracking-wider px-4 py-3">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {jobs.length === 0 ? (
-                <tr><td colSpan={7} className="text-center text-text-muted py-12 text-sm">No jobs found</td></tr>
+                <tr><td colSpan={8} className="text-center text-text-muted py-12 text-sm">No jobs found</td></tr>
               ) : jobs.map(j => (
-                <tr key={j.id} className="hover:bg-bg-elevated transition-colors">
+                <tr key={j.id} className="hover:bg-bg-elevated transition-colors group">
                   <td className="px-4 py-3"><Link to={`/jobs/${j.id}`} className="text-sm font-semibold text-accent hover:text-accent-hover">{j.jobNumber}</Link></td>
                   <td className="px-4 py-3">
                     <div>
@@ -130,6 +139,16 @@ export default function JobsPage() {
                   <td className="px-4 py-3 text-sm text-text-muted">{j.scheduledDate ? new Date(j.scheduledDate).toLocaleDateString() : '—'}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-text-primary">${j.totalRevenue.toLocaleString()}</td>
                   <td className="px-4 py-3 text-sm text-text-secondary">{j.assignedRep?.name || '—'}</td>
+                  <td className="px-4 py-3">
+                    {isOwner && (
+                      <button
+                        onClick={() => handleDelete(j)}
+                        className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded hover:bg-red-500/10 transition-all"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

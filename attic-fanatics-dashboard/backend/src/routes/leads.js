@@ -5,22 +5,29 @@ const { authenticate, requireRole } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-const STAGES = ['NEW', 'CONTACTED', 'QUALIFIED', 'ESTIMATE_SENT', 'NEGOTIATING', 'WON', 'LOST', 'UNQUALIFIED'];
-
 router.get('/kanban', authenticate, async (req, res) => {
   try {
-    const leads = await prisma.lead.findMany({
-      include: {
-        leadSource: { select: { name: true, slug: true } },
-        assignedRep: { select: { name: true } },
-        estimates: { select: { total: true, status: true } },
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+    const [leads, stageConfig] = await Promise.all([
+      prisma.lead.findMany({
+        include: {
+          leadSource: { select: { name: true, slug: true } },
+          assignedRep: { select: { name: true } },
+          estimates: { select: { total: true, status: true } },
+        },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      prisma.pipelineStage.findMany({ orderBy: { order: 'asc' } }),
+    ]);
 
     const kanban = {};
-    STAGES.forEach(s => { kanban[s] = []; });
-    leads.forEach(l => { if (kanban[l.stage]) kanban[l.stage].push(l); });
+    stageConfig.forEach(s => { kanban[s.slug] = []; });
+    leads.forEach(l => {
+      if (kanban[l.stage] !== undefined) {
+        kanban[l.stage].push(l);
+      } else {
+        kanban[l.stage] = [l];
+      }
+    });
 
     res.json(kanban);
   } catch (err) {
@@ -31,18 +38,25 @@ router.get('/kanban', authenticate, async (req, res) => {
 
 router.get('/stats', authenticate, async (req, res) => {
   try {
-    const total = await prisma.lead.count();
-    const byStageCounts = await prisma.lead.groupBy({ by: ['stage'], _count: true });
-    const wonLeads = await prisma.lead.findMany({ where: { stage: 'WON' }, select: { estimatedValue: true } });
-    const pipelineLeads = await prisma.lead.findMany({
-      where: { stage: { notIn: ['WON', 'LOST', 'UNQUALIFIED'] } },
-      select: { estimatedValue: true },
-    });
+    const [total, byStageCounts, stageConfig] = await Promise.all([
+      prisma.lead.count(),
+      prisma.lead.groupBy({ by: ['stage'], _count: true }),
+      prisma.pipelineStage.findMany({ select: { slug: true, isWon: true, isLost: true } }),
+    ]);
+
+    const wonSlugs = stageConfig.filter(s => s.isWon).map(s => s.slug);
+    const lostSlugs = stageConfig.filter(s => s.isLost).map(s => s.slug);
+    const terminalSlugs = [...wonSlugs, ...lostSlugs];
+
+    const [wonLeads, pipelineLeads] = await Promise.all([
+      prisma.lead.findMany({ where: { stage: { in: wonSlugs.length ? wonSlugs : ['__none__'] } }, select: { estimatedValue: true } }),
+      prisma.lead.findMany({ where: { stage: { notIn: terminalSlugs.length ? terminalSlugs : ['__none__'] } }, select: { estimatedValue: true } }),
+    ]);
 
     const pipelineValue = pipelineLeads.reduce((s, l) => s + (l.estimatedValue || 0), 0);
     const wonValue = wonLeads.reduce((s, l) => s + (l.estimatedValue || 0), 0);
-    const wonCount = byStageCounts.find(b => b.stage === 'WON')?._count || 0;
-    const lostCount = byStageCounts.find(b => b.stage === 'LOST')?._count || 0;
+    const wonCount = byStageCounts.filter(b => wonSlugs.includes(b.stage)).reduce((s, b) => s + b._count, 0);
+    const lostCount = byStageCounts.filter(b => lostSlugs.includes(b.stage)).reduce((s, b) => s + b._count, 0);
     const closeRate = (wonCount + lostCount) > 0 ? wonCount / (wonCount + lostCount) : 0;
 
     res.json({ total, pipelineValue, wonValue, closeRate, byStage: byStageCounts });
