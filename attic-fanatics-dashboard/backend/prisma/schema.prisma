@@ -21,16 +21,6 @@ enum LeadQuality {
   COLD
 }
 
-enum LeadStage {
-  NEW
-  CONTACTED
-  QUALIFIED
-  ESTIMATE_SENT
-  NEGOTIATING
-  WON
-  LOST
-  UNQUALIFIED
-}
 
 enum ActivityType {
   CALL
@@ -215,6 +205,21 @@ model ApiConnection {
   @@map("api_connections")
 }
 
+// ── Pipeline Stage Config ──────────────────────────────────────────────────
+
+model PipelineStage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  label     String
+  color     String   @default("gray")
+  order     Int      @default(0)
+  isWon     Boolean  @default(false)
+  isLost    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("pipeline_stages")
+}
+
 // ── CRM Pipeline ───────────────────────────────────────────────────────────
 
 model Lead {
@@ -228,7 +233,7 @@ model Lead {
   zip            String?
   leadSource     LeadSource @relation(fields: [leadSourceId], references: [id])
   leadSourceId   String
-  stage          LeadStage  @default(NEW)
+  stage          String     @default("NEW")
   assignedRep    SalesRep?  @relation(fields: [assignedRepId], references: [id])
   assignedRepId  String?
   estimatedValue Float?
@@ -249,8 +254,8 @@ model LeadStageHistory {
   id          String     @id @default(cuid())
   lead        Lead       @relation(fields: [leadId], references: [id])
   leadId      String
-  fromStage   LeadStage?
-  toStage     LeadStage
+  fromStage   String?
+  toStage     String
   changedBy   User       @relation(fields: [changedById], references: [id])
   changedById String
   changedAt   DateTime   @default(now())
