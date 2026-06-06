@@ -3,8 +3,20 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
-      fontFamily: { sans: ['Inter', 'sans-serif'] },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        display: ['Bebas Neue', 'sans-serif'],
+        mono: ['Courier Prime', 'monospace'],
+      },
       colors: {
+        forge: {
+          bg: '#E8E4DC',
+          ink: '#0D0D0D',
+          card: '#D8D4CC',
+          muted: '#6A6A6A',
+          border: '#C8C4BC',
+          cream: '#F0ECE4',
+        },
         bg: {
           primary: '#0a0a0a',
           card: '#111111',

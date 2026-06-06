@@ -234,6 +234,7 @@ export default function LeadsKanban() {
   const [showStagesDrawer, setShowStagesDrawer] = useState(false);
   const [sources, setSources] = useState([]);
   const [reps, setReps] = useState([]);
+  const [leadStats, setLeadStats] = useState(null);
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', state: 'NJ', leadSourceId: '', estimatedValue: '' });
   const { canManageData } = useAuth();
 
@@ -244,12 +245,13 @@ export default function LeadsKanban() {
     api.get('/pipeline-stages').then(r => setStages(r.data)).catch(() => {});
     api.get('/funnel/sources').then(r => setSources(r.data)).catch(() => {});
     api.get('/sales/leaderboard').then(r => setReps(r.data?.reps || r.data || [])).catch(() => {});
+    api.get('/leads/stats').then(r => setLeadStats(r.data)).catch(() => {});
   }, []);
 
   async function loadKanban() {
     setLoading(true);
     try {
-      const r = await api.get('/leads/kanban');
+      const r = await api.get('/leads/kanban?tenant_id=aevum-roofing');
       setKanban(r.data);
     } catch {
       toast.error('Failed to load leads');
@@ -340,6 +342,12 @@ export default function LeadsKanban() {
     .filter(([s]) => !terminalSlugs.includes(s))
     .reduce((sum, [, leads]) => sum + leads.reduce((s, l) => s + (l.estimatedValue || 0), 0), 0);
 
+  const allLeads = Object.values(kanban).flat();
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const newThisWeek = allLeads.filter(l => new Date(l.createdAt).getTime() > oneWeekAgo).length;
+  const leadsWithBudget = allLeads.filter(l => l.estimatedValue);
+  const avgBudget = leadsWithBudget.length ? leadsWithBudget.reduce((s, l) => s + l.estimatedValue, 0) / leadsWithBudget.length : 0;
+
   if (loading) {
     return (
       <div className="p-6">
@@ -356,6 +364,21 @@ export default function LeadsKanban() {
 
   return (
     <div className="h-full flex flex-col">
+      {/* Stat bar */}
+      <div style={{ background: 'var(--forge-bg)', borderBottom: '2px solid var(--forge-ink)', display: 'flex', flexShrink: 0 }}>
+        {[
+          { label: 'Total Leads', value: leadStats?.total ?? allLeads.length },
+          { label: 'New This Week', value: newThisWeek },
+          { label: 'Avg Budget', value: avgBudget ? `$${avgBudget >= 1000 ? (avgBudget / 1000).toFixed(1) + 'k' : avgBudget.toFixed(0)}` : '—' },
+          { label: 'Open Pipeline', value: `$${totalPipelineValue >= 1000 ? (totalPipelineValue / 1000).toFixed(1) + 'k' : totalPipelineValue.toFixed(0)}` },
+        ].map((stat, i, arr) => (
+          <div key={stat.label} style={{ flex: 1, padding: '16px 24px', borderRight: i < arr.length - 1 ? '2px solid var(--forge-ink)' : 'none' }}>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: 'var(--forge-ink)', lineHeight: 1 }}>{stat.value}</p>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--forge-muted)', marginTop: '4px' }}>{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
         <div>
           <h1 className="text-xl font-bold text-text-primary">CRM Pipeline</h1>

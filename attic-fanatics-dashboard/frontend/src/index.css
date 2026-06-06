@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --forge-bg: #E8E4DC;
+  --forge-ink: #0D0D0D;
+  --forge-card: #D8D4CC;
+  --forge-muted: #6A6A6A;
+  --forge-border: #C8C4BC;
+  --forge-cream: #F0ECE4;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-mono: 'Courier Prime', monospace;
+}
+
 * { box-sizing: border-box; }
 
 body {

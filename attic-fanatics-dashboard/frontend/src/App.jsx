@@ -31,6 +31,7 @@ import ProfilePage from './pages/ProfilePage';
 import PipelineSettingsPage from './pages/PipelineSettingsPage';
 import RoofingQuotesList from './pages/RoofingQuotesList';
 import RoofingQuoteBuilder from './pages/RoofingQuoteBuilder';
+import SitesPage from './pages/SitesPage';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
@@ -52,6 +53,9 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        {/* Sites */}
+        <Route path="sites" element={<SitesPage />} />
+
         {/* Core dashboard */}
         <Route index element={<Overview />} />
         <Route path="funnel/:slug" element={<FunnelPage />} />
