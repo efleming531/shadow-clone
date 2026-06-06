@@ -103,16 +103,16 @@ export default function Sidebar({ collapsed, onClose }) {
       <aside className={`fixed top-0 left-0 h-full w-64 bg-bg-card border-r border-border flex flex-col z-30 transition-transform duration-200 ${collapsed ? '-translate-x-full' : 'translate-x-0'} lg:translate-x-0 lg:static lg:z-auto`}>
         {/* Logo */}
         <div className="p-4 border-b border-border flex-shrink-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <ForgeIcon />
-            <span className="font-black text-sm tracking-widest text-white uppercase">FORGE</span>
-          </div>
-          <p className="text-[10px] text-accent font-semibold uppercase tracking-widest ml-7 opacity-70">Business OS</p>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', letterSpacing: '0.2em', color: '#E8E4DC', lineHeight: 1 }}>// THE FORGE</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.15em', color: '#6A6A6A', marginTop: '2px' }}>Aevum Roofing</p>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           <NavItem to="/" exact icon="⊞" label="Overview" />
+
+          <SectionLabel label="Sites" />
+          <NavItem to="/sites" icon="⊡" label="Sites" />
 
           <SectionLabel label="CRM" />
           <NavItem to="/leads/kanban" icon="⬦" label="Pipeline Kanban" />

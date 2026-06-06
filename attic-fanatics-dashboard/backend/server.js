@@ -34,6 +34,7 @@ const unitEconomicsRoutes = require('./src/routes/unitEconomics');
 const materialsRoutes = require('./src/routes/materials');
 const pipelineRoutes = require('./src/routes/pipeline');
 const roofingQuotesRoutes = require('./src/routes/roofingQuotes');
+const sitesRouter = require('./src/routes/sites');
 
 const { startAlertChecker } = require('./src/jobs/alertChecker');
 
@@ -67,6 +68,8 @@ app.use('/api/unit-economics', unitEconomicsRoutes);
 app.use('/api/materials', materialsRoutes);
 app.use('/api/pipeline-stages', pipelineRoutes);
 app.use('/api/roofing-quotes', roofingQuotesRoutes);
+app.use('/site', sitesRouter);
+app.use('/api/sites', sitesRouter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

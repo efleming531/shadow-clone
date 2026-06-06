@@ -19,7 +19,7 @@ export default function Layout() {
               <path strokeLinecap="round" d="M3 6h18M3 12h18M3 18h18" />
             </svg>
           </button>
-          <span className="font-black text-sm tracking-widest text-white uppercase">FORGE</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', letterSpacing: '0.2em', color: '#E8E4DC' }}>// THE FORGE</span>
           <div className="w-6" />
         </header>
 

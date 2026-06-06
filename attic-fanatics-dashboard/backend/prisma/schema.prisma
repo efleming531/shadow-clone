@@ -511,6 +511,22 @@ model TerritoryData {
   @@map("territory_data")
 }
 
+// ── Sites ──────────────────────────────────────────────────────────────────
+
+model SiteConfig {
+  id           String   @id @default(cuid())
+  tenantId     String   @unique
+  heroHeadline String   @default("Roofing Engineered for Exceptional Homes.")
+  heroSub      String   @default("We don't do standard jobs — we build building envelopes that outlast the generation that commissioned them.")
+  ctaText      String   @default("Request a Project Assessment")
+  tagline      String   @default("Built to Last an Era")
+  serviceArea  String   @default("NJ · NY · PA")
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  @@map("site_configs")
+}
+
 // ── Roofing Quotes ─────────────────────────────────────────────────────────
 
 model RoofingQuote {
