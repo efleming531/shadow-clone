@@ -92,6 +92,8 @@ model User {
   leadActivities     LeadActivity[]
   estimates          Estimate[]
   sops               SOP[]
+  roofingQuotesCreated  RoofingQuote[] @relation("QuoteCreator")
+  roofingQuotesApproved RoofingQuote[] @relation("QuoteApprover")
 
   @@map("users")
 }
@@ -246,6 +248,7 @@ model Lead {
   estimates    Estimate[]
   job          Job?
   customer     Customer?
+  roofingQuotes RoofingQuote[]
 
   @@map("leads")
 }
@@ -506,4 +509,50 @@ model TerritoryData {
   updatedAt DateTime @updatedAt
 
   @@map("territory_data")
+}
+
+// ── Roofing Quotes ─────────────────────────────────────────────────────────
+
+model RoofingQuote {
+  id              String    @id @default(cuid())
+  number          String    @unique
+  lead            Lead?     @relation(fields: [leadId], references: [id])
+  leadId          String?
+
+  propertyAddress String?
+  roofType        String    @default("gable")
+  existingLayers  Int       @default(1)
+  facets          Json      @default("[]")
+
+  totalSquares    Float     @default(0)
+  wastePercent    Float     @default(10)
+  adjustedSquares Float     @default(0)
+
+  materialType      String    @default("architectural")
+  materialCostPerSq Float     @default(0)
+  laborCostPerSq    Float     @default(0)
+
+  lineItems       Json      @default("[]")
+  subtotal        Float     @default(0)
+  total           Float     @default(0)
+
+  aiAnalysis      String?
+  aiFlags         Json      @default("[]")
+  aiConfidence    Int?
+
+  status              String    @default("DRAFT")
+  escalated           Boolean   @default(false)
+  escalationReasons   Json      @default("[]")
+  escalationNotes     String?
+  approvedBy          User?     @relation("QuoteApprover", fields: [approvedById], references: [id])
+  approvedById        String?
+  approvedAt          DateTime?
+
+  notes           String?
+  createdBy       User      @relation("QuoteCreator", fields: [createdById], references: [id])
+  createdById     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("roofing_quotes")
 }
