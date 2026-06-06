@@ -1,28 +1,44 @@
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const JWT_SECRET = process.env.JWT_SECRET;
 
-const prisma = new PrismaClient();
-
-const authenticate = async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
+// requireAuth: verifies Bearer JWT, attaches req.user
+function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-    if (!user || !user.isActive) return res.status(401).json({ error: 'Invalid or inactive account' });
-    req.user = user;
+    const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
+    // Normalize: provide both .id and .userId for backward compat
+    req.user = { ...decoded, id: decoded.userId || decoded.id };
     next();
   } catch {
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(401).json({ error: 'Invalid or expired token' });
   }
-};
+}
 
-const requireRole = (...roles) => (req, res, next) => {
-  if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ error: 'Insufficient permissions' });
+// backward-compat alias
+const authenticate = requireAuth;
+
+// requireRole(...roles): checks req.user.role
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'Forbidden' });
+    next();
+  };
+}
+
+// requireCustomer: verifies JWT has role 'customer'
+function requireCustomer(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
+    if (decoded.role !== 'customer') return res.status(401).json({ error: 'Customer auth required' });
+    req.customer = decoded;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired token' });
   }
-  next();
-};
+}
 
-module.exports = { authenticate, requireRole };
+module.exports = { requireAuth, authenticate, requireRole, requireCustomer };

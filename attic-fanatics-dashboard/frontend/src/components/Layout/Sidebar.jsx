@@ -103,8 +103,8 @@ export default function Sidebar({ collapsed, onClose }) {
       <aside className={`fixed top-0 left-0 h-full w-64 bg-bg-card border-r border-border flex flex-col z-30 transition-transform duration-200 ${collapsed ? '-translate-x-full' : 'translate-x-0'} lg:translate-x-0 lg:static lg:z-auto`}>
         {/* Logo */}
         <div className="p-4 border-b border-border flex-shrink-0">
-          <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', letterSpacing: '0.2em', color: '#E8E4DC', lineHeight: 1 }}>// THE FORGE</p>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.15em', color: '#6A6A6A', marginTop: '2px' }}>Aevum Roofing</p>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.7rem', letterSpacing: '0.3em', color: '#6A6A6A', lineHeight: 1 }}>// THE FORGE</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', letterSpacing: '0.12em', color: '#E8E4DC', lineHeight: 1 }}>AEVUM ROOFING</div>
         </div>
 
         {/* Nav */}

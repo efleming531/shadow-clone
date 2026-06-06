@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
 import Login from './pages/Login';
+import CustomerLoginPage from './pages/CustomerLoginPage';
 import Overview from './pages/Overview';
 import FunnelPage from './pages/FunnelPage';
 import SalesLeaderboard from './pages/SalesLeaderboard';
@@ -41,8 +42,8 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
-  if (requiredRole === 'OWNER' && user.role !== 'OWNER') return <Navigate to="/" replace />;
-  if (requiredRole === 'OWNER_MANAGER' && !['OWNER', 'MANAGER'].includes(user.role)) return <Navigate to="/" replace />;
+  if (requiredRole === 'OWNER' && !['OWNER', 'admin'].includes(user.role)) return <Navigate to="/" replace />;
+  if (requiredRole === 'OWNER_MANAGER' && !['OWNER', 'MANAGER', 'admin'].includes(user.role)) return <Navigate to="/" replace />;
   return children;
 };
 
@@ -52,9 +53,11 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/portal/login" element={<CustomerLoginPage />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         {/* Sites */}
         <Route path="sites" element={<SitesPage />} />
+        <Route path="app/sites" element={<ProtectedRoute requiredRole="OWNER"><SitesPage /></ProtectedRoute>} />
 
         {/* Core dashboard */}
         <Route index element={<Overview />} />

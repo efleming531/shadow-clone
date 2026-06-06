@@ -234,6 +234,79 @@ async function main() {
   console.log('Reps: mike@atticfanatics.com / Rep2024!');
 }
 
+// ── Forge Foundation Seed ─────────────────────────────────────────────────
+
+async function seedForgeFoundation() {
+  const bcrypt = require('bcryptjs');
+
+  // Create or find Aevum tenant
+  let tenant = await prisma.tenant.findUnique({ where: { slug: 'aevum-roofing' } });
+  if (!tenant) {
+    tenant = await prisma.tenant.create({
+      data: { name: 'Aevum Roofing', slug: 'aevum-roofing' }
+    });
+    console.log('Created tenant: Aevum Roofing');
+  }
+
+  // Create or find admin user
+  let adminUser = await prisma.user.findUnique({ where: { email: 'admin@aevumroofing.com' } });
+  if (!adminUser) {
+    const passwordHash = await bcrypt.hash('ForgeAdmin2026!', 10);
+    adminUser = await prisma.user.create({
+      data: {
+        email: 'admin@aevumroofing.com',
+        passwordHash,
+        name: 'Eric Admin',
+        firstName: 'Eric',
+        lastName: 'Admin',
+        role: 'admin',
+        tenantId: tenant.id,
+        active: true,
+        isActive: true,
+      }
+    });
+    console.log('Created admin user: admin@aevumroofing.com');
+  }
+
+  // Create SiteConfig if not exists
+  const existingConfig = await prisma.siteConfig.findUnique({ where: { tenantId: 'aevum-roofing' } });
+  if (!existingConfig) {
+    await prisma.siteConfig.create({
+      data: {
+        tenantId: 'aevum-roofing',
+        heroHeadline: 'Roofing Engineered for Exceptional Homes.',
+        heroSub: "We don't do standard jobs — we build building envelopes that outlast the generation that commissioned them.",
+        ctaText: 'Request a Project Assessment',
+        tagline: 'Built to Last an Era',
+        serviceArea: 'NJ · NY · PA',
+      }
+    });
+    console.log('Created SiteConfig for aevum-roofing');
+  }
+
+  // Create default AutomationRule
+  const existingRule = await prisma.automationRule.findFirst({ where: { tenantId: tenant.id, name: 'Auto-assign new leads' } });
+  if (!existingRule) {
+    await prisma.automationRule.create({
+      data: {
+        tenantId: tenant.id,
+        name: 'Auto-assign new leads',
+        trigger: 'lead_created',
+        conditions: [],
+        actions: [
+          { type: 'assign_rep', config: {} },
+          { type: 'send_notification', config: { title: 'New Lead', body: 'A new assessment has been submitted.' } }
+        ],
+        active: true,
+      }
+    });
+    console.log('Created AutomationRule: Auto-assign new leads');
+  }
+
+  console.log('Forge foundation seed complete.');
+}
+
 main()
+  .then(() => seedForgeFoundation())
   .catch(e => { console.error(e); process.exit(1); })
   .finally(() => prisma.$disconnect());
