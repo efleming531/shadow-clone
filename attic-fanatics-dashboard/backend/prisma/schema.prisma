@@ -9,12 +9,6 @@ datasource db {
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 
-enum Role {
-  OWNER
-  MANAGER
-  REP
-}
-
 enum LeadQuality {
   HOT
   WARM
@@ -80,10 +74,15 @@ model User {
   name         String
   email        String    @unique
   passwordHash String
-  role         Role      @default(REP)
+  role         String    @default("OWNER")
   createdAt    DateTime  @default(now())
   lastLogin    DateTime?
   isActive     Boolean   @default(true)
+  firstName    String?
+  lastName     String?
+  phone        String?
+  tenantId     String?
+  active       Boolean   @default(true)
 
   funnelDataCreated  FunnelData[]
   salesRep           SalesRep?
@@ -225,7 +224,7 @@ model PipelineStage {
 // ── CRM Pipeline ───────────────────────────────────────────────────────────
 
 model Lead {
-  id             String     @id @default(cuid())
+  id             String      @id @default(cuid())
   name           String
   phone          String?
   email          String?
@@ -233,21 +232,34 @@ model Lead {
   city           String?
   state          String?
   zip            String?
-  leadSource     LeadSource @relation(fields: [leadSourceId], references: [id])
-  leadSourceId   String
-  stage          String     @default("NEW")
-  assignedRep    SalesRep?  @relation(fields: [assignedRepId], references: [id])
+  leadSource     LeadSource? @relation(fields: [leadSourceId], references: [id])
+  leadSourceId   String?
+  stage          String      @default("NEW")
+  assignedRep    SalesRep?   @relation(fields: [assignedRepId], references: [id])
   assignedRepId  String?
   estimatedValue Float?
   notes          String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  firstName      String?
+  lastName       String?
+  projectType    String?
+  budget         String?
+  timeline       String?
+  source         String      @default("direct")
+  status         String      @default("new")
+  tenantId       String?
+  utmSource      String      @default("direct")
+  utmMedium      String      @default("none")
+  utmCampaign    String      @default("none")
+  utmContent     String      @default("none")
+  submittedAt    DateTime    @default(now())
 
-  stageHistory LeadStageHistory[]
-  activities   LeadActivity[]
-  estimates    Estimate[]
-  job          Job?
-  customer     Customer?
+  stageHistory  LeadStageHistory[]
+  activities    LeadActivity[]
+  estimates     Estimate[]
+  job           Job?
+  customer      Customer?
   roofingQuotes RoofingQuote[]
 
   @@map("leads")
@@ -317,6 +329,7 @@ model Estimate {
   createdById String
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  tenantId    String?
 
   @@map("estimates")
 }
@@ -324,18 +337,21 @@ model Estimate {
 // ── Jobs & Customers ───────────────────────────────────────────────────────
 
 model Customer {
-  id        String   @id @default(cuid())
-  lead      Lead?    @relation(fields: [leadId], references: [id])
-  leadId    String?  @unique
-  name      String
-  phone     String?
-  email     String?
-  address   String?
-  city      String?
-  state     String?
-  zip       String?
-  notes     String?
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  lead        Lead?    @relation(fields: [leadId], references: [id])
+  leadId      String?  @unique
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+  city        String?
+  state       String?
+  zip         String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  userId      String?  @unique
+  tenantId    String?
+  portalToken String?  @unique @default(cuid())
 
   jobs        Job[]
   memberships Membership[]
@@ -363,6 +379,8 @@ model Job {
   notes         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  tenantId      String?
+  techId        String?
 
   @@map("jobs")
 }
@@ -449,7 +467,7 @@ model SOP {
 model CommissionRule {
   id             String         @id @default(cuid())
   name           String
-  roleTarget     Role
+  roleTarget     String
   type           CommissionType
   rate           Float
   bonusThreshold Float?
@@ -511,7 +529,7 @@ model TerritoryData {
   @@map("territory_data")
 }
 
-// ── Sites ──────────────────────────────────────────────────────────────────
+// ── Sites & Config ─────────────────────────────────────────────────────────
 
 model SiteConfig {
   id           String   @id @default(cuid())
@@ -525,6 +543,107 @@ model SiteConfig {
   createdAt    DateTime @default(now())
 
   @@map("site_configs")
+}
+
+// ── Forge Foundation Models ────────────────────────────────────────────────
+
+model Tenant {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  plan        String       @default("starter")
+  active      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  automations AutomationRule[]
+
+  @@map("tenants")
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  tenantId    String
+  fromUserId  String
+  toUserId    String?
+  customerId  String?
+  body        String
+  channel     String    @default("in_app")
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([customerId])
+  @@map("messages")
+}
+
+model Photo {
+  id          String    @id @default(cuid())
+  jobId       String
+  uploadedBy  String
+  url         String
+  caption     String?
+  createdAt   DateTime  @default(now())
+
+  @@index([jobId])
+  @@map("photos")
+}
+
+model Document {
+  id          String    @id @default(cuid())
+  jobId       String
+  customerId  String?
+  type        String
+  url         String
+  signedAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([jobId])
+  @@map("documents")
+}
+
+model Checklist {
+  id          String    @id @default(cuid())
+  jobId       String
+  title       String
+  items       Json      @default("[]")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([jobId])
+  @@map("checklists")
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  body        String
+  link        String?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([readAt])
+  @@map("notifications")
+}
+
+model AutomationRule {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  name        String
+  trigger     String
+  conditions  Json      @default("[]")
+  actions     Json      @default("[]")
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@map("automation_rules")
 }
 
 // ── Roofing Quotes ─────────────────────────────────────────────────────────

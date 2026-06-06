@@ -4,9 +4,11 @@ const path = require('path');
 const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate } = require('../middleware/auth');
+const { runAutomations } = require('../utils/automation');
 
 const prisma = new PrismaClient();
 const STATIC_PATH = path.join(__dirname, '../static/aevum/index.html');
+const ASSESSMENT_PATH = path.join(__dirname, '../static/aevum/assessment.html');
 
 function writeHTML(html) {
   fs.mkdirSync(path.dirname(STATIC_PATH), { recursive: true });
@@ -316,6 +318,11 @@ router.get('/aevum', async (req, res) => {
   }
 });
 
+// GET /aevum/assessment — serves assessment HTML
+router.get('/aevum/assessment', (req, res) => {
+  res.sendFile(ASSESSMENT_PATH);
+});
+
 // PATCH /api/sites/aevum — update config + regenerate HTML
 router.patch('/aevum', authenticate, async (req, res) => {
   try {
@@ -335,6 +342,53 @@ router.patch('/aevum', authenticate, async (req, res) => {
 
     writeHTML(generateHTML(config));
     res.json(config);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /assessment — public lead capture endpoint
+router.post('/assessment', async (req, res) => {
+  try {
+    const { firstName, lastName, phone, email, address, projectType, budget, timeline, notes, utmSource, utmMedium, utmCampaign, utmContent } = req.body;
+    if (!firstName || !lastName || !phone || !email || !address) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Find or create the aevum-roofing tenant
+    let tenant = await prisma.tenant.findUnique({ where: { slug: 'aevum-roofing' } });
+    if (!tenant) {
+      tenant = await prisma.tenant.create({ data: { name: 'Aevum Roofing', slug: 'aevum-roofing' } });
+    }
+
+    const lead = await prisma.lead.create({
+      data: {
+        name: `${firstName} ${lastName}`,
+        firstName,
+        lastName,
+        phone,
+        email,
+        address,
+        projectType: projectType || null,
+        budget: budget || null,
+        timeline: timeline || null,
+        notes: notes || null,
+        source: 'aevum_landing',
+        status: 'new',
+        tenantId: tenant.id,
+        utmSource: utmSource || 'direct',
+        utmMedium: utmMedium || 'none',
+        utmCampaign: utmCampaign || 'none',
+        utmContent: utmContent || 'none',
+        stage: 'new',
+      }
+    });
+
+    // Fire automations asynchronously (don't block response)
+    runAutomations('lead_created', { ...lead, tenantId: tenant.id }, prisma).catch(err => console.error('Automation error:', err));
+
+    res.json({ success: true, leadId: lead.id });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

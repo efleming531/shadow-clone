@@ -3,7 +3,7 @@ import axios from 'axios';
 const api = axios.create({ baseURL: '/api' });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('af_token');
+  const token = localStorage.getItem('forge_token') || localStorage.getItem('af_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -12,6 +12,7 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
+      localStorage.removeItem('forge_token');
       localStorage.removeItem('af_token');
       localStorage.removeItem('af_user');
       window.location.href = '/login';

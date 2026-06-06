@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Project Assessment — AEVUM Roofing</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital@0,1&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#E8E4DC;color:#0D0D0D;font-family:'Courier Prime',monospace;cursor:crosshair}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 48px;border-bottom:2px solid #0D0D0D;background:#E8E4DC}
+.nav-mark{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.2em}
+.nav-back{font-family:'Courier Prime',monospace;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase}
+.nav-back:hover{opacity:0.6}
+.page{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;padding-top:72px}
+/* LEFT PANEL */
+.left{background:#0D0D0D;color:#E8E4DC;padding:80px 56px;display:flex;flex-direction:column;justify-content:space-between}
+.left-top{}
+.left-forge{font-family:'Bebas Neue',sans-serif;font-size:0.75rem;letter-spacing:0.3em;color:#6A6A6A;margin-bottom:4px}
+.left-brand{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:0.12em;color:#E8E4DC;line-height:1;margin-bottom:24px}
+.left-sub{font-family:'EB Garamond',serif;font-style:italic;font-size:1.2rem;color:#9A9A9A;line-height:1.5;max-width:340px;border-left:2px solid #444;padding-left:20px;margin-bottom:56px}
+.trust-item{display:flex;align-items:flex-start;gap:16px;margin-bottom:28px}
+.trust-mark{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:#6A6A6A;letter-spacing:0.1em;flex-shrink:0;margin-top:2px}
+.trust-label{font-family:'Courier Prime',monospace;font-size:0.8rem;letter-spacing:0.08em;color:#E8E4DC;line-height:1.4}
+.trust-sub{font-family:'Courier Prime',monospace;font-size:0.7rem;color:#6A6A6A;margin-top:2px}
+.left-bottom{border-top:1px solid #2A2A2A;padding-top:24px}
+.powered-label{font-family:'Courier Prime',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#4A4A4A;margin-bottom:4px}
+.powered-mark{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.2em;color:#6A6A6A}
+/* RIGHT PANEL */
+.right{background:#E8E4DC;padding:80px 56px;overflow-y:auto}
+.form-header{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:0.08em;margin-bottom:8px}
+.form-sub{font-family:'Courier Prime',monospace;font-size:0.8rem;letter-spacing:0.1em;color:#6A6A6A;margin-bottom:40px;text-transform:uppercase}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.form-field{border:2px solid #0D0D0D;padding:0;position:relative}
+.form-field.full{grid-column:1/-1}
+.form-field + .form-field{border-left:none}
+.form-field:nth-child(odd):not(.full) + .form-field:not(.full){border-left:2px solid #0D0D0D}
+.form-field-inner{width:100%}
+.form-label{display:block;font-family:'Courier Prime',monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:#6A6A6A;padding:10px 16px 0;line-height:1}
+.form-input{display:block;width:100%;background:transparent;border:none;outline:none;font-family:'Courier Prime',monospace;font-size:0.9rem;color:#0D0D0D;padding:6px 16px 12px;cursor:crosshair}
+.form-input::placeholder{color:#C0BCB4}
+select.form-input{cursor:crosshair;appearance:none;-webkit-appearance:none}
+textarea.form-input{resize:none;min-height:80px}
+.form-field:focus-within{background:#F0ECE4;z-index:1}
+/* Status + Submit */
+.status-bar{border:2px solid #0D0D0D;padding:10px 16px;margin-top:0;font-family:'Courier Prime',monospace;font-size:0.75rem;letter-spacing:0.1em;min-height:44px;display:flex;align-items:center;background:#E8E4DC;grid-column:1/-1}
+.status-bar.error{background:#FFEAEA;border-color:#CC0000;color:#CC0000}
+.status-bar.success{background:#EAFAEE;border-color:#00AA44;color:#00AA44}
+.submit-btn{width:100%;background:#0D0D0D;color:#E8E4DC;border:2px solid #0D0D0D;padding:18px;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.2em;cursor:crosshair;transition:all 0.15s;grid-column:1/-1}
+.submit-btn:hover{background:#E8E4DC;color:#0D0D0D}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+/* Success state */
+.success-state{display:none;text-align:center;padding:80px 40px}
+.success-mark{font-family:'Bebas Neue',sans-serif;font-size:5rem;color:#C8C4BC;line-height:1;margin-bottom:24px}
+.success-headline{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:0.1em;margin-bottom:16px}
+.success-body{font-family:'EB Garamond',serif;font-style:italic;font-size:1.1rem;color:#6A6A6A;max-width:400px;margin:0 auto;line-height:1.6}
+/* Mobile */
+@media(max-width:768px){
+  nav{padding:12px 20px}
+  .page{grid-template-columns:1fr}
+  .left{padding:48px 24px;min-height:auto}
+  .left-sub{display:none}
+  .right{padding:48px 24px}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/site/aevum" class="nav-mark">// AEVUM</a>
+  <a href="/site/aevum" class="nav-back">← Back to Site</a>
+</nav>
+
+<div class="page">
+  <div class="left">
+    <div class="left-top">
+      <div class="left-forge">// THE FORGE</div>
+      <div class="left-brand">AEVUM<br>ROOFING</div>
+      <p class="left-sub">Every exceptional home deserves a roof built to outlast the generation that commissioned it.</p>
+      <div class="trust-item">
+        <div class="trust-mark">//</div>
+        <div>
+          <div class="trust-label">No Volume Approach</div>
+          <div class="trust-sub">$10,000 minimum project value</div>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-mark">//</div>
+        <div>
+          <div class="trust-label">Response Within 24 Hours</div>
+          <div class="trust-sub">You will hear from us — personally</div>
+        </div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-mark">//</div>
+        <div>
+          <div class="trust-label">Your Information Stays Private</div>
+          <div class="trust-sub">Never shared, never sold</div>
+        </div>
+      </div>
+    </div>
+    <div class="left-bottom">
+      <div class="powered-label">Powered by</div>
+      <div class="powered-mark">// THE FORGE</div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div id="form-wrap">
+      <h1 class="form-header">Request Assessment</h1>
+      <p class="form-sub">// All fields required unless marked optional</p>
+      <form id="assessment-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="form-label">First Name</label>
+            <input class="form-input" type="text" name="firstName" placeholder="Eric" required>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" type="text" name="lastName" placeholder="Fleming" required>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Phone</label>
+            <input class="form-input" type="tel" name="phone" placeholder="(555) 000-0000" required>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" name="email" placeholder="eric@email.com" required>
+          </div>
+          <div class="form-field full">
+            <label class="form-label">Property Address</label>
+            <input class="form-input" type="text" name="address" placeholder="123 Main Street, Short Hills, NJ 07078" required>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Project Type</label>
+            <select class="form-input" name="projectType" required>
+              <option value="">Select type</option>
+              <option>Full Replacement</option>
+              <option>Partial Replacement</option>
+              <option>Repair</option>
+              <option>New Construction</option>
+              <option>Inspection Only</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Budget Range</label>
+            <select class="form-input" name="budget" required>
+              <option value="">Select budget</option>
+              <option>$10K–$25K</option>
+              <option>$25K–$75K</option>
+              <option>$75K–$150K</option>
+              <option>$150K–$500K</option>
+              <option>$500K+</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Timeline</label>
+            <select class="form-input" name="timeline" required>
+              <option value="">Select timeline</option>
+              <option>ASAP</option>
+              <option>Within 1 month</option>
+              <option>1–3 months</option>
+              <option>3–6 months</option>
+              <option>6+ months / Planning</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Notes (optional)</label>
+            <textarea class="form-input" name="notes" placeholder="Any additional details..."></textarea>
+          </div>
+          <div class="status-bar" id="status-bar">Ready to submit.</div>
+          <button class="submit-btn" type="submit" id="submit-btn">Submit Assessment Request</button>
+        </div>
+      </form>
+    </div>
+    <div class="success-state" id="success-state">
+      <div class="success-mark">//</div>
+      <div class="success-headline">Assessment Received.</div>
+      <p class="success-body">Thank you. A member of the Aevum team will contact you personally within 24 hours to discuss your project.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function getUTM() {
+    const p = new URLSearchParams(window.location.search);
+    return {
+      utmSource: p.get('utm_source') || 'direct',
+      utmMedium: p.get('utm_medium') || 'none',
+      utmCampaign: p.get('utm_campaign') || 'none',
+      utmContent: p.get('utm_content') || 'none',
+    };
+  }
+
+  document.getElementById('assessment-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const bar = document.getElementById('status-bar');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    bar.textContent = 'Sending your assessment request...';
+    bar.className = 'status-bar';
+
+    const fd = new FormData(e.target);
+    const body = Object.fromEntries(fd.entries());
+    Object.assign(body, getUTM());
+
+    try {
+      const res = await fetch('/api/site/assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Submission failed');
+      document.getElementById('form-wrap').style.display = 'none';
+      document.getElementById('success-state').style.display = 'block';
+    } catch (err) {
+      bar.textContent = '// Error: ' + err.message + ' — Please try again.';
+      bar.className = 'status-bar error';
+      btn.disabled = false;
+      btn.textContent = 'Submit Assessment Request';
+    }
+  });
+})();
+</script>
+</body>
+</html>
