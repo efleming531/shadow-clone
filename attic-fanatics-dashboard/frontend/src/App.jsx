@@ -31,6 +31,8 @@ import SOPsPage from './pages/SOPsPage';
 import UnitEconomicsPage from './pages/UnitEconomicsPage';
 import ProfilePage from './pages/ProfilePage';
 import PipelineSettingsPage from './pages/PipelineSettingsPage';
+import RoofingQuotesList from './pages/RoofingQuotesList';
+import RoofingQuoteBuilder from './pages/RoofingQuoteBuilder';
 
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
@@ -94,6 +96,11 @@ const AppRoutes = () => {
         <Route path="settings" element={<ProtectedRoute requiredRole="OWNER"><UserManagement /></ProtectedRoute>} />
         <Route path="pipeline-settings" element={<ProtectedRoute requiredRole="OWNER_MANAGER"><PipelineSettingsPage /></ProtectedRoute>} />
         <Route path="profile" element={<ProfilePage />} />
+
+        {/* Roofing Quotes */}
+        <Route path="roofing-quotes" element={<RoofingQuotesList />} />
+        <Route path="roofing-quotes/new" element={<ProtectedRoute requiredRole="OWNER_MANAGER"><RoofingQuoteBuilder /></ProtectedRoute>} />
+        <Route path="roofing-quotes/:id" element={<RoofingQuoteBuilder />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

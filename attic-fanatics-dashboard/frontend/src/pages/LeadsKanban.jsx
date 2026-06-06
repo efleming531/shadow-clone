@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, closestCorners } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/UI/Modal';
-import { getText, getKanban } from '../utils/stageColors';
+import { getText, getKanban, COLOR_OPTIONS, STAGE_COLOR_MAP } from '../utils/stageColors';
 
 const fmtCurrency = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n || 0}`;
 
@@ -80,6 +80,158 @@ function KanbanColumn({ stage, leads, isOver }) {
   );
 }
 
+function StagesDrawer({ onClose, onStagesChanged }) {
+  const [stageList, setStageList] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [newForm, setNewForm] = useState({ label: '', color: 'blue' });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get('/pipeline-stages').then(r => setStageList(r.data)).catch(() => {});
+  }, []);
+
+  async function handleSaveEdit(s) {
+    setSaving(true);
+    try {
+      await api.patch(`/pipeline-stages/${s.id}`, editForm);
+      setStageList(prev => prev.map(p => p.id === s.id ? { ...p, ...editForm } : p));
+      setEditingId(null);
+      onStagesChanged();
+    } catch { toast.error('Failed to save'); }
+    setSaving(false);
+  }
+
+  async function handleMove(s, dir) {
+    const idx = stageList.findIndex(x => x.id === s.id);
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= stageList.length) return;
+    const updated = [...stageList];
+    [updated[idx], updated[newIdx]] = [updated[newIdx], updated[idx]];
+    const reordered = updated.map((x, i) => ({ ...x, order: i }));
+    setStageList(reordered);
+    try {
+      await Promise.all(reordered.map(x => api.patch(`/pipeline-stages/${x.id}`, { order: x.order })));
+      onStagesChanged();
+    } catch { toast.error('Failed to reorder'); }
+  }
+
+  async function handleDelete(s) {
+    try {
+      await api.delete(`/pipeline-stages/${s.id}`);
+      setStageList(prev => prev.filter(p => p.id !== s.id));
+      onStagesChanged();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Cannot delete — leads exist in this stage');
+    }
+  }
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    if (!newForm.label.trim()) return;
+    try {
+      const r = await api.post('/pipeline-stages', newForm);
+      setStageList(prev => [...prev, r.data]);
+      setNewForm({ label: '', color: 'blue' });
+      onStagesChanged();
+    } catch { toast.error('Failed to create stage'); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative w-96 h-full bg-bg-card border-l border-border flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <h2 className="text-base font-bold text-text-primary">Pipeline Stages</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary text-xl leading-none">×</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          {stageList.map((s, idx) => (
+            <div key={s.id} className="bg-bg-elevated border border-border rounded-lg">
+              {editingId === s.id ? (
+                <div className="p-3 space-y-2">
+                  <input
+                    className="forge-input text-sm w-full"
+                    value={editForm.label}
+                    onChange={e => setEditForm(f => ({ ...f, label: e.target.value }))}
+                    placeholder="Stage name"
+                  />
+                  <div className="flex flex-wrap gap-1.5">
+                    {COLOR_OPTIONS.map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setEditForm(f => ({ ...f, color: c }))}
+                        className={`w-6 h-6 rounded-full border-2 ${STAGE_COLOR_MAP[c].swatch} ${editForm.color === c ? 'border-white' : 'border-transparent'}`}
+                        title={c}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+                      <input type="checkbox" checked={editForm.isWon || false}
+                        onChange={e => setEditForm(f => ({ ...f, isWon: e.target.checked, isLost: e.target.checked ? false : f.isLost }))}
+                        className="accent-green-500" /> Won
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+                      <input type="checkbox" checked={editForm.isLost || false}
+                        onChange={e => setEditForm(f => ({ ...f, isLost: e.target.checked, isWon: e.target.checked ? false : f.isWon }))}
+                        className="accent-red-500" /> Lost
+                    </label>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button onClick={() => setEditingId(null)} className="px-3 py-1 text-xs text-text-secondary hover:text-text-primary bg-bg-card rounded">Cancel</button>
+                    <button disabled={saving} onClick={() => handleSaveEdit(s)} className="px-3 py-1 text-xs font-semibold bg-accent hover:bg-accent-hover text-white rounded">Save</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${STAGE_COLOR_MAP[s.color]?.swatch ?? 'bg-gray-500'}`} />
+                  <span className="flex-1 text-sm text-text-primary font-medium truncate">{s.label}</span>
+                  {s.isWon && <span className="text-[10px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded">WON</span>}
+                  {s.isLost && <span className="text-[10px] bg-red-500/15 text-red-400 px-1.5 py-0.5 rounded">LOST</span>}
+                  <div className="flex items-center gap-1 ml-1">
+                    <button onClick={() => handleMove(s, -1)} disabled={idx === 0} className="text-text-muted hover:text-text-primary disabled:opacity-30 text-xs w-5 h-5 flex items-center justify-center">↑</button>
+                    <button onClick={() => handleMove(s, 1)} disabled={idx === stageList.length - 1} className="text-text-muted hover:text-text-primary disabled:opacity-30 text-xs w-5 h-5 flex items-center justify-center">↓</button>
+                    <button onClick={() => { setEditingId(s.id); setEditForm({ label: s.label, color: s.color, isWon: s.isWon, isLost: s.isLost }); }} className="text-text-muted hover:text-accent text-xs w-5 h-5 flex items-center justify-center">✎</button>
+                    <button onClick={() => handleDelete(s)} className="text-text-muted hover:text-red-400 text-xs w-5 h-5 flex items-center justify-center">✕</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-border flex-shrink-0">
+          <p className="text-xs font-semibold text-text-muted mb-2 uppercase tracking-wider">Add Stage</p>
+          <form onSubmit={handleCreate} className="space-y-2">
+            <input
+              className="forge-input text-sm w-full"
+              placeholder="Stage name"
+              value={newForm.label}
+              onChange={e => setNewForm(f => ({ ...f, label: e.target.value }))}
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {COLOR_OPTIONS.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setNewForm(f => ({ ...f, color: c }))}
+                  className={`w-5 h-5 rounded-full border-2 ${STAGE_COLOR_MAP[c].swatch} ${newForm.color === c ? 'border-white' : 'border-transparent'}`}
+                  title={c}
+                />
+              ))}
+            </div>
+            <button type="submit" className="w-full py-2 text-sm font-semibold bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors">
+              + Add Stage
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LeadsKanban() {
   const [kanban, setKanban] = useState({});
   const [stages, setStages] = useState([]);
@@ -88,6 +240,7 @@ export default function LeadsKanban() {
   const [activeLead, setActiveLead] = useState(null);
   const [overId, setOverId] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showStagesDrawer, setShowStagesDrawer] = useState(false);
   const [sources, setSources] = useState([]);
   const [reps, setReps] = useState([]);
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', state: 'NJ', leadSourceId: '', estimatedValue: '' });
@@ -112,6 +265,13 @@ export default function LeadsKanban() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function reloadStages() {
+    try {
+      const r = await api.get('/pipeline-stages');
+      setStages(r.data);
+    } catch {}
   }
 
   function findLeadById(id) {
@@ -213,6 +373,11 @@ export default function LeadsKanban() {
         <div className="flex items-center gap-3">
           <Link to="/leads" className="text-sm text-text-secondary hover:text-text-primary transition-colors">List View</Link>
           {canManageData && (
+            <button onClick={() => setShowStagesDrawer(true)} className="text-sm text-text-secondary hover:text-text-primary border border-border hover:border-border-focus px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5">
+              ⚙ Stages
+            </button>
+          )}
+          {canManageData && (
             <button onClick={() => setShowNewModal(true)} className="bg-accent hover:bg-accent-hover text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
               + New Lead
             </button>
@@ -246,6 +411,10 @@ export default function LeadsKanban() {
           </DragOverlay>
         </DndContext>
       </div>
+
+      {showStagesDrawer && (
+        <StagesDrawer onClose={() => setShowStagesDrawer(false)} onStagesChanged={() => { reloadStages(); loadKanban(); }} />
+      )}
 
       {showNewModal && (
         <Modal title="New Lead" onClose={() => setShowNewModal(false)}>

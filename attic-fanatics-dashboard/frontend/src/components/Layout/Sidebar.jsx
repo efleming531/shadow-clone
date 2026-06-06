@@ -119,6 +119,7 @@ export default function Sidebar({ collapsed, onClose }) {
           <NavItem to="/leads" icon="☰" label="All Leads" />
           <NavItem to="/customers" icon="👤" label="Customers" />
           <NavItem to="/estimates" icon="📋" label="Estimates" />
+          <NavItem to="/roofing-quotes" icon="🏠" label="Roofing Quotes" />
           <NavItem to="/jobs" icon="🔧" label="Jobs" />
 
           <SectionLabel label="Analytics" />
@@ -142,7 +143,6 @@ export default function Sidebar({ collapsed, onClose }) {
           <SectionLabel label="Operations" />
           <NavItem to="/sops" icon="📚" label="SOPs" />
           {canManageData && <NavItem to="/alerts" icon="🔔" label="Alerts" />}
-          {canManageData && <NavItem to="/pipeline-settings" icon="◈" label="Pipeline Stages" />}
           {canManageData && <NavItem to="/data-entry" icon="✎" label="Data Entry" />}
           {isOwner && <NavItem to="/settings" icon="⚙" label="User Management" />}
         </nav>
