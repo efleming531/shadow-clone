@@ -6,13 +6,18 @@ const { PrismaClient } = require('@prisma/client');
 const { authenticate } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
-const STATIC_PATH = path.join(__dirname, '../../static/aevum/index.html');
+const STATIC_PATH = path.join(__dirname, '../static/aevum/index.html');
+
+function writeHTML(html) {
+  fs.mkdirSync(path.dirname(STATIC_PATH), { recursive: true });
+  fs.writeFileSync(STATIC_PATH, html, 'utf8');
+}
 
 async function getOrCreateConfig() {
   let config = await prisma.siteConfig.findUnique({ where: { tenantId: 'aevum-roofing' } });
   if (!config) {
     config = await prisma.siteConfig.create({ data: { tenantId: 'aevum-roofing' } });
-    fs.writeFileSync(STATIC_PATH, generateHTML(config), 'utf8');
+    writeHTML(generateHTML(config));
   }
   return config;
 }
@@ -299,7 +304,7 @@ router.get('/aevum', async (req, res) => {
     if (req.baseUrl === '/site') {
       if (!fs.existsSync(STATIC_PATH)) {
         const config = await getOrCreateConfig();
-        fs.writeFileSync(STATIC_PATH, generateHTML(config), 'utf8');
+        writeHTML(generateHTML(config));
       }
       return res.sendFile(STATIC_PATH);
     }
@@ -328,8 +333,7 @@ router.patch('/aevum', authenticate, async (req, res) => {
       create: { tenantId: 'aevum-roofing', ...data },
     });
 
-    const html = generateHTML(config);
-    fs.writeFileSync(STATIC_PATH, html, 'utf8');
+    writeHTML(generateHTML(config));
     res.json(config);
   } catch (err) {
     console.error(err);
