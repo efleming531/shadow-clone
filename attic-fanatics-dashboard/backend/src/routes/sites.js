@@ -302,7 +302,9 @@ footer{background:#0D0D0D;color:#E8E4DC;padding:48px;display:flex;align-items:ce
 router.get('/aevum', async (req, res) => {
   try {
     if (req.baseUrl === '/site') {
-      if (!fs.existsSync(STATIC_PATH)) {
+      const isPlaceholder = !fs.existsSync(STATIC_PATH) ||
+        fs.readFileSync(STATIC_PATH, 'utf8').includes('placeholder');
+      if (isPlaceholder) {
         const config = await getOrCreateConfig();
         writeHTML(generateHTML(config));
       }
