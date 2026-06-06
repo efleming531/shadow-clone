@@ -520,6 +520,11 @@ model RoofingQuote {
   leadId          String?
 
   propertyAddress String?
+  propStreet      String?
+  propStreet2     String?
+  propCity        String?
+  propState       String?
+  propZip         String?
   roofType        String    @default("gable")
   existingLayers  Int       @default(1)
   facets          Json      @default("[]")

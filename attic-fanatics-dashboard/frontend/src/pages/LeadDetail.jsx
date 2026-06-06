@@ -31,8 +31,16 @@ export default function LeadDetail() {
   const [showStageModal, setShowStageModal] = useState(false);
   const [activity, setActivity] = useState({ type: 'CALL', subject: '', body: '' });
   const [newStage, setNewStage] = useState('');
+  const [quotes, setQuotes] = useState([]);
 
-  useEffect(() => { loadLead(); }, [id]);
+  useEffect(() => { loadLead(); loadQuotes(); }, [id]);
+
+  async function loadQuotes() {
+    try {
+      const r = await api.get(`/roofing-quotes?leadId=${id}`);
+      setQuotes(r.data);
+    } catch {}
+  }
 
   async function loadLead() {
     setLoading(true);
@@ -163,30 +171,37 @@ export default function LeadDetail() {
             </div>
           )}
 
-          {lead.estimates?.length > 0 && (
-            <div className="bg-bg-card border border-border rounded-xl p-4">
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Estimates</h3>
+          <div className="bg-bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Roofing Quotes</h3>
+              {canManageData && (
+                <Link to={`/roofing-quotes/new?leadId=${lead.id}`} className="text-xs text-accent hover:text-accent-hover transition-colors">+ New Quote</Link>
+              )}
+            </div>
+            {quotes.length > 0 ? (
               <div className="space-y-2">
-                {lead.estimates.map(e => (
-                  <Link key={e.id} to={`/estimates/${e.id}`} className="flex items-center justify-between p-2 bg-bg-elevated rounded-lg hover:bg-bg-hover transition-colors">
-                    <span className="text-sm text-text-primary">{e.number}</span>
+                {quotes.map(q => (
+                  <Link key={q.id} to={`/roofing-quotes/${q.id}`} className="flex items-center justify-between p-2 bg-bg-elevated rounded-lg hover:bg-bg-hover transition-colors">
+                    <div>
+                      <span className="text-sm font-mono text-accent">{q.number}</span>
+                      {q.escalated && <span className="ml-2 text-[10px] text-red-400">⚠ escalated</span>}
+                    </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-accent">${e.total.toLocaleString()}</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${e.status === 'ACCEPTED' ? 'bg-green-500/15 text-green-400' : 'bg-orange-500/15 text-orange-400'}`}>{e.status}</span>
+                      <span className="text-sm font-semibold text-text-primary">${(q.total || 0).toLocaleString()}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                        q.status === 'APPROVED' ? 'bg-green-500/15 text-green-400' :
+                        q.status === 'ESCALATED' ? 'bg-red-500/15 text-red-400' :
+                        q.status === 'ACCEPTED' ? 'bg-emerald-500/15 text-emerald-400' :
+                        'bg-gray-500/15 text-gray-400'
+                      }`}>{q.status.replace(/_/g, ' ')}</span>
                     </div>
                   </Link>
                 ))}
               </div>
-              {canManageData && (
-                <Link to={`/estimates/new?leadId=${lead.id}`} className="mt-2 block text-center text-xs text-accent hover:text-accent-hover transition-colors">+ New Estimate</Link>
-              )}
-            </div>
-          )}
-          {lead.estimates?.length === 0 && canManageData && (
-            <Link to={`/estimates/new?leadId=${lead.id}`} className="block text-center text-xs text-accent hover:text-accent-hover transition-colors bg-bg-card border border-border rounded-xl p-4">
-              + Create Estimate
-            </Link>
-          )}
+            ) : (
+              <p className="text-xs text-text-muted text-center py-3">No quotes yet</p>
+            )}
+          </div>
         </div>
 
         {/* Right: Activity feed + Stage history */}

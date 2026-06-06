@@ -31,15 +31,6 @@ function LeadCard({ lead, isDragging }) {
           <span className="text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-text-secondary">{lead.assignedRep.name.split(' ')[0]}</span>
         )}
       </div>
-      {lead.estimates?.length > 0 && (
-        <div className="mt-1.5 flex gap-1">
-          {lead.estimates.slice(0, 2).map((e, i) => (
-            <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded-full ${e.status === 'ACCEPTED' ? 'bg-green-500/15 text-green-400' : 'bg-orange-500/15 text-orange-400'}`}>
-              EST {fmtCurrency(e.total)}
-            </span>
-          ))}
-        </div>
-      )}
     </Link>
   );
 }

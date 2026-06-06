@@ -157,8 +157,9 @@ export default function RoofingQuotesList() {
                   className="hover:bg-bg-elevated transition-colors cursor-pointer group"
                 >
                   <td className="px-4 py-3 font-mono text-accent font-semibold">{q.number}</td>
-                  <td className="px-4 py-3 text-text-primary max-w-[200px] truncate">
-                    {q.propertyAddress || q.lead?.name || <span className="text-text-muted italic">No address</span>}
+                  <td className="px-4 py-3 text-text-primary max-w-[200px]">
+                    <p className="truncate">{q.propStreet || q.propertyAddress || <span className="text-text-muted italic">No address</span>}</p>
+                    {(q.propCity || q.propState) && <p className="text-xs text-text-muted">{[q.propCity, q.propState, q.propZip].filter(Boolean).join(', ')}</p>}
                   </td>
                   <td className="px-4 py-3 text-text-secondary capitalize">{q.materialType}</td>
                   <td className="px-4 py-3 text-right text-text-secondary">{q.adjustedSquares?.toFixed(1)}</td>

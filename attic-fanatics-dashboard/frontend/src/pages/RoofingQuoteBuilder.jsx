@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -35,6 +35,104 @@ const ADD_ON_PRESETS = [
 
 const STATUS_FLOW = ['DRAFT', 'PENDING_REVIEW', 'ESCALATED', 'APPROVED', 'SENT', 'ACCEPTED', 'DECLINED'];
 
+const US_STATES = {
+  'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+  'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+  'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+  'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+  'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS',
+  'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH',
+  'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC',
+  'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA',
+  'Rhode Island': 'RI', 'South Carolina': 'SC', 'South Dakota': 'SD', 'Tennessee': 'TN',
+  'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA',
+  'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY', 'District of Columbia': 'DC',
+};
+
+function AddressAutocomplete({ value, onChange, onSelect, placeholder }) {
+  const [suggestions, setSuggestions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef(null);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  function handleChange(e) {
+    const v = e.target.value;
+    onChange(v);
+    clearTimeout(timerRef.current);
+    if (v.length < 4) { setSuggestions([]); setOpen(false); return; }
+    timerRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=us&limit=6&q=${encodeURIComponent(v)}`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        const items = data
+          .filter(r => r.address?.house_number || r.address?.road)
+          .slice(0, 5)
+          .map(r => {
+            const a = r.address;
+            const street = [a.house_number, a.road].filter(Boolean).join(' ');
+            const city = a.city || a.town || a.village || a.suburb || '';
+            const stateAbbr = US_STATES[a.state] || a.state || '';
+            const zip = a.postcode || '';
+            return { street, city, state: stateAbbr, zip, display: r.display_name };
+          })
+          .filter(r => r.street);
+        setSuggestions(items);
+        setOpen(items.length > 0);
+      } catch {}
+      setLoading(false);
+    }, 350);
+  }
+
+  function handleSelect(item) {
+    onSelect(item);
+    setSuggestions([]);
+    setOpen(false);
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <div className="relative">
+        <input
+          className="forge-input w-full pr-7"
+          value={value}
+          onChange={handleChange}
+          onFocus={() => suggestions.length > 0 && setOpen(true)}
+          placeholder={placeholder || 'Start typing an address…'}
+          autoComplete="off"
+        />
+        {loading && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        )}
+      </div>
+      {open && suggestions.length > 0 && (
+        <ul className="absolute z-50 top-full left-0 right-0 mt-1 bg-bg-elevated border border-border rounded-lg shadow-xl overflow-hidden">
+          {suggestions.map((s, i) => (
+            <li
+              key={i}
+              onMouseDown={() => handleSelect(s)}
+              className="px-3 py-2.5 text-sm cursor-pointer hover:bg-white/5 transition-colors border-b border-border last:border-0"
+            >
+              <p className="text-text-primary font-medium">{s.street}</p>
+              <p className="text-xs text-text-muted">{[s.city, s.state, s.zip].filter(Boolean).join(', ')}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function calcSquares(facets) {
   let raw = 0;
   for (const f of facets) {
@@ -62,6 +160,7 @@ function calcTotals(facets, wastePercent, materialCostPerSq, laborCostPerSq, add
 
 export default function RoofingQuoteBuilder() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { canManageData, user } = useAuth();
   const isNew = !id;
@@ -74,7 +173,11 @@ export default function RoofingQuoteBuilder() {
 
   // Form state
   const [leadId, setLeadId] = useState('');
-  const [propertyAddress, setPropertyAddress] = useState('');
+  const [propStreet, setPropStreet] = useState('');
+  const [propStreet2, setPropStreet2] = useState('');
+  const [propCity, setPropCity] = useState('');
+  const [propState, setPropState] = useState('NJ');
+  const [propZip, setPropZip] = useState('');
   const [roofType, setRoofType] = useState('gable');
   const [existingLayers, setExistingLayers] = useState(1);
   const [facets, setFacets] = useState([{ label: 'Main Roof', widthFt: '', lengthFt: '', pitch: '4/12' }]);
@@ -92,7 +195,12 @@ export default function RoofingQuoteBuilder() {
 
   useEffect(() => {
     api.get('/leads').then(r => setLeads(r.data)).catch(() => {});
-    if (!isNew) loadQuote();
+    if (!isNew) {
+      loadQuote();
+    } else {
+      const preLeadId = searchParams.get('leadId');
+      if (preLeadId) setLeadId(preLeadId);
+    }
   }, [id]);
 
   async function loadQuote() {
@@ -101,7 +209,11 @@ export default function RoofingQuoteBuilder() {
       const q = r.data;
       setQuote(q);
       setLeadId(q.leadId || '');
-      setPropertyAddress(q.propertyAddress || '');
+      setPropStreet(q.propStreet || q.propertyAddress || '');
+      setPropStreet2(q.propStreet2 || '');
+      setPropCity(q.propCity || '');
+      setPropState(q.propState || 'NJ');
+      setPropZip(q.propZip || '');
       setRoofType(q.roofType || 'gable');
       setExistingLayers(q.existingLayers || 1);
       setFacets(Array.isArray(q.facets) && q.facets.length > 0 ? q.facets : [{ label: 'Main Roof', widthFt: '', lengthFt: '', pitch: '4/12' }]);
@@ -157,9 +269,15 @@ export default function RoofingQuoteBuilder() {
   const totals = calcTotals(facets, wastePercent, materialCostPerSq, laborCostPerSq, { _materialKey: materialKey, items: addOns });
 
   function buildPayload() {
+    const propertyAddress = [propStreet, propStreet2, propCity && propState ? `${propCity}, ${propState}` : propCity || propState, propZip].filter(Boolean).join(' ');
     return {
       leadId: leadId || null,
       propertyAddress,
+      propStreet,
+      propStreet2,
+      propCity,
+      propState,
+      propZip,
       roofType,
       existingLayers: parseInt(existingLayers),
       facets,
@@ -248,8 +366,8 @@ export default function RoofingQuoteBuilder() {
             <h1 className="text-lg font-bold text-text-primary">
               {isNew ? 'New Roofing Quote' : quote?.number || '…'}
             </h1>
-            {!isNew && quote?.propertyAddress && (
-              <p className="text-xs text-text-muted">{quote.propertyAddress}</p>
+            {(propStreet || propCity) && (
+              <p className="text-xs text-text-muted">{[propStreet, propCity && propState ? `${propCity}, ${propState}` : propCity, propZip].filter(Boolean).join(' ')}</p>
             )}
           </div>
           {!isNew && quote && (
@@ -315,8 +433,40 @@ export default function RoofingQuoteBuilder() {
               <h2 className="text-sm font-bold text-text-primary uppercase tracking-wider">Property Info</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="text-xs text-text-muted mb-1 block">Property Address</label>
-                  <input className="forge-input" value={propertyAddress} onChange={e => setPropertyAddress(e.target.value)} placeholder="123 Main St, Newark, NJ 07102" />
+                  <label className="text-xs text-text-muted mb-1 block">Street Address</label>
+                  <AddressAutocomplete
+                    value={propStreet}
+                    onChange={setPropStreet}
+                    onSelect={s => {
+                      setPropStreet(s.street);
+                      if (s.city) setPropCity(s.city);
+                      if (s.state) setPropState(s.state);
+                      if (s.zip) setPropZip(s.zip);
+                    }}
+                    placeholder="123 Main St — start typing to search"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs text-text-muted mb-1 block">Street Address 2 <span className="text-text-muted font-normal">(Apt, Suite, Unit)</span></label>
+                  <input className="forge-input" value={propStreet2} onChange={e => setPropStreet2(e.target.value)} placeholder="Apt 4B, Suite 100, etc." />
+                </div>
+                <div>
+                  <label className="text-xs text-text-muted mb-1 block">City</label>
+                  <input className="forge-input" value={propCity} onChange={e => setPropCity(e.target.value)} placeholder="Newark" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">State</label>
+                    <select className="forge-input" value={propState} onChange={e => setPropState(e.target.value)}>
+                      {Object.entries(US_STATES).map(([name, abbr]) => (
+                        <option key={abbr} value={abbr}>{abbr} — {name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-muted mb-1 block">ZIP Code</label>
+                    <input className="forge-input" value={propZip} onChange={e => setPropZip(e.target.value)} placeholder="07102" maxLength={10} />
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs text-text-muted mb-1 block">Linked Lead (optional)</label>

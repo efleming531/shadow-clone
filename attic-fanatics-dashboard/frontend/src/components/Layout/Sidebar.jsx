@@ -118,7 +118,6 @@ export default function Sidebar({ collapsed, onClose }) {
           <NavItem to="/leads/kanban" icon="⬦" label="Pipeline Kanban" />
           <NavItem to="/leads" icon="☰" label="All Leads" />
           <NavItem to="/customers" icon="👤" label="Customers" />
-          <NavItem to="/estimates" icon="📋" label="Estimates" />
           <NavItem to="/roofing-quotes" icon="🏠" label="Roofing Quotes" />
           <NavItem to="/jobs" icon="🔧" label="Jobs" />
 

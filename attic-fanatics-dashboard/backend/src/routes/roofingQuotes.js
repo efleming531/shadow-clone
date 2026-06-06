@@ -201,10 +201,11 @@ router.get('/stats', authenticate, async (req, res) => {
 
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { status, escalated } = req.query;
+    const { status, escalated, leadId } = req.query;
     const where = {};
     if (status) where.status = status;
     if (escalated === 'true') where.escalated = true;
+    if (leadId) where.leadId = leadId;
 
     const quotes = await prisma.roofingQuote.findMany({
       where,

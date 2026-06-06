@@ -14,8 +14,6 @@ import UserManagement from './pages/UserManagement';
 import LeadsKanban from './pages/LeadsKanban';
 import LeadsListPage from './pages/LeadsListPage';
 import LeadDetail from './pages/LeadDetail';
-import EstimatesPage from './pages/EstimatesPage';
-import EstimateBuilder from './pages/EstimateBuilder';
 import JobsPage from './pages/JobsPage';
 import JobDetail from './pages/JobDetail';
 import CustomersPage from './pages/CustomersPage';
@@ -66,11 +64,6 @@ const AppRoutes = () => {
         <Route path="leads" element={<LeadsListPage />} />
         <Route path="leads/kanban" element={<LeadsKanban />} />
         <Route path="leads/:id" element={<LeadDetail />} />
-
-        {/* Estimates */}
-        <Route path="estimates" element={<EstimatesPage />} />
-        <Route path="estimates/new" element={<ProtectedRoute requiredRole="OWNER_MANAGER"><EstimateBuilder /></ProtectedRoute>} />
-        <Route path="estimates/:id" element={<EstimateBuilder />} />
 
         {/* Jobs & Customers */}
         <Route path="jobs" element={<JobsPage />} />
