@@ -135,7 +135,8 @@ export default function RoofingQuotesList() {
         </div>
       ) : (
         <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="table-scroll">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Quote #</th>
@@ -196,6 +197,7 @@ export default function RoofingQuotesList() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

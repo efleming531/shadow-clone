@@ -90,3 +90,9 @@ select.forge-input option { background: #161616; }
 .forge-prose li { margin-bottom: 0.25rem; }
 .forge-prose code { background: #1e1e1e; padding: 2px 6px; border-radius: 4px; font-size: 0.875em; color: #f97316; }
 .forge-prose strong { color: #ffffff; }
+
+/* Bottom nav safe-area inset for iPhone home indicator */
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Tables scroll horizontally on small screens */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
