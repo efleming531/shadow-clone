@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const { PrismaClient } = require('@prisma/client');
 
 const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL'];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
@@ -34,16 +35,51 @@ const unitEconomicsRoutes = require('./src/routes/unitEconomics');
 const materialsRoutes = require('./src/routes/materials');
 const pipelineRoutes = require('./src/routes/pipeline');
 const roofingQuotesRoutes = require('./src/routes/roofingQuotes');
-const sitesRouter = require('./src/routes/sites');
+const { sitesHTMLRouter, sitesAPIRouter, assessmentRouter, writeSiteFiles } = require('./src/routes/sites');
+const { getTemplate, generateAssessmentHTML } = require('./src/utils/templates/index');
 
 const { startAlertChecker } = require('./src/jobs/alertChecker');
 
+const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Custom domain mapping ───────────────────────────────────────────────────
+// Must run before route registrations. Intercepts requests on custom domains
+// and serves the matching site's static files directly.
+app.use(async (req, res, next) => {
+  try {
+    const host = req.hostname;
+    if (
+      host.includes('railway.app') ||
+      host.includes('localhost') ||
+      host.includes('127.0.0.1')
+    ) {
+      return next();
+    }
+    const site = await prisma.siteConfig.findFirst({
+      where: { customDomain: host, isLive: true },
+    });
+    if (!site) return next();
+    const siteStaticDir = path.join(__dirname, 'src/static/sites', site.slug);
+    const reqPath = req.path;
+    if (reqPath === '/' || reqPath === '') {
+      return res.sendFile(path.join(siteStaticDir, 'index.html'));
+    }
+    if (reqPath === '/assessment') {
+      return res.sendFile(path.join(siteStaticDir, 'assessment.html'));
+    }
+    return res.sendFile(path.join(siteStaticDir, 'index.html'));
+  } catch (err) {
+    next();
+  }
+});
+
+// ── Routes ─────────────────────────────────────────────────────────────────
 
 app.use('/api/auth', authRoutes);
 app.use('/api/overview', overviewRoutes);
@@ -68,8 +104,9 @@ app.use('/api/unit-economics', unitEconomicsRoutes);
 app.use('/api/materials', materialsRoutes);
 app.use('/api/pipeline-stages', pipelineRoutes);
 app.use('/api/roofing-quotes', roofingQuotesRoutes);
-app.use('/site', sitesRouter);
-app.use('/api/sites', sitesRouter);
+app.use('/site', sitesHTMLRouter);
+app.use('/api/sites', sitesAPIRouter);
+app.use('/api/site', assessmentRouter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
@@ -84,7 +121,23 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// ── Startup ─────────────────────────────────────────────────────────────────
+
+async function ensureStaticSites() {
+  try {
+    const sites = await prisma.siteConfig.findMany();
+    for (const site of sites) {
+      if (!site.slug) continue;
+      writeSiteFiles(site);
+    }
+    console.log(`Static sites generated for ${sites.length} site(s)`);
+  } catch (err) {
+    console.error('ensureStaticSites error:', err.message);
+  }
+}
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   startAlertChecker();
+  ensureStaticSites();
 });

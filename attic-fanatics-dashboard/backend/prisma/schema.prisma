@@ -524,7 +524,29 @@ model SiteConfig {
   updatedAt    DateTime @updatedAt
   createdAt    DateTime @default(now())
 
+  slug         String    @unique @default(cuid())
+  customDomain String?   @unique
+  template     String    @default("aevum-brutalist")
+  publishedAt  DateTime?
+  isLive       Boolean   @default(false)
+
+  deploys SiteDeploy[]
+
   @@map("site_configs")
+}
+
+model SiteDeploy {
+  id             String     @id @default(cuid())
+  siteId         String
+  site           SiteConfig @relation(fields: [siteId], references: [id])
+  deployedBy     String
+  htmlSnapshot   String
+  configSnapshot Json
+  deployedAt     DateTime   @default(now())
+
+  @@index([siteId])
+  @@index([deployedAt])
+  @@map("site_deploys")
 }
 
 // ── Roofing Quotes ─────────────────────────────────────────────────────────

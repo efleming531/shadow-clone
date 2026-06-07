@@ -228,6 +228,23 @@ async function main() {
   await prisma.callCenterLog.createMany({ data: callLogs });
   console.log(`Created ${callLogs.length} call center logs`);
 
+  // Ensure aevum-roofing SiteConfig exists with correct slug
+  await prisma.siteConfig.upsert({
+    where: { tenantId: 'aevum-roofing' },
+    update: { slug: 'aevum', template: 'aevum-brutalist' },
+    create: {
+      tenantId: 'aevum-roofing',
+      slug: 'aevum',
+      template: 'aevum-brutalist',
+      heroHeadline: 'READY TO BUILD SOMETHING EXCEPTIONAL?',
+      heroSub: "We don't do standard jobs — we build building envelopes that outlast the generation that commissioned them.",
+      ctaText: 'Request a Project Assessment',
+      tagline: 'Built to Last an Era',
+      serviceArea: 'NJ · NY · PA',
+    },
+  });
+  console.log('Upserted aevum-roofing SiteConfig');
+
   console.log('\nSeed complete!');
   console.log('Login: admin@atticfanatics.com / AtticAdmin2024!');
   console.log('Manager: sarah@atticfanatics.com / Manager2024!');
