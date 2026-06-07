@@ -125,12 +125,19 @@ app.use((err, req, res, next) => {
 
 async function ensureStaticSites() {
   try {
+    // When prisma db push adds the nullable slug column, existing rows get NULL.
+    // Set slug='aevum' for the aevum-roofing tenant before generating files.
+    await prisma.siteConfig.updateMany({
+      where: { tenantId: 'aevum-roofing', slug: null },
+      data: { slug: 'aevum' },
+    });
+
     const sites = await prisma.siteConfig.findMany();
-    for (const site of sites) {
-      if (!site.slug) continue;
+    const active = sites.filter(s => s.slug);
+    for (const site of active) {
       writeSiteFiles(site);
     }
-    console.log(`Static sites generated for ${sites.length} site(s)`);
+    if (active.length) console.log(`Static sites generated: ${active.map(s => s.slug).join(', ')}`);
   } catch (err) {
     console.error('ensureStaticSites error:', err.message);
   }

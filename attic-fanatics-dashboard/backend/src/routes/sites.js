@@ -38,13 +38,34 @@ async function getOrCreateAevum() {
   return site;
 }
 
+// ── helpers: find site by slug, with self-healing for NULL slugs ────────────
+
+async function findSiteBySlug(slug) {
+  // Primary: slug field lookup
+  let site = await prisma.siteConfig.findFirst({ where: { slug } });
+  if (site) return site;
+
+  // Fallback: if 'aevum' slug was not yet initialized (NULL after migration),
+  // find by tenantId and auto-set slug so subsequent requests are fast.
+  if (slug === 'aevum') {
+    const candidate = await prisma.siteConfig.findUnique({ where: { tenantId: 'aevum-roofing' } });
+    if (candidate) {
+      site = await prisma.siteConfig.update({
+        where: { id: candidate.id },
+        data: { slug: 'aevum' },
+      });
+    }
+  }
+  return site || null;
+}
+
 // ── HTML (public) router ────────────────────────────────────────────────────
 
 const sitesHTMLRouter = express.Router();
 
 sitesHTMLRouter.get('/:slug', async (req, res) => {
   try {
-    const site = await prisma.siteConfig.findFirst({ where: { slug: req.params.slug } });
+    const site = await findSiteBySlug(req.params.slug);
     if (!site) return res.status(404).send('Site not found');
     const indexPath = path.join(siteDir(site.slug), 'index.html');
     const needsRegen = !fs.existsSync(indexPath) ||
@@ -59,7 +80,7 @@ sitesHTMLRouter.get('/:slug', async (req, res) => {
 
 sitesHTMLRouter.get('/:slug/assessment', async (req, res) => {
   try {
-    const site = await prisma.siteConfig.findFirst({ where: { slug: req.params.slug } });
+    const site = await findSiteBySlug(req.params.slug);
     if (!site) return res.status(404).send('Site not found');
     const assessPath = path.join(siteDir(site.slug), 'assessment.html');
     if (!fs.existsSync(assessPath)) writeSiteFiles(site);

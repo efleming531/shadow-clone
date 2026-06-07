@@ -524,7 +524,7 @@ model SiteConfig {
   updatedAt    DateTime @updatedAt
   createdAt    DateTime @default(now())
 
-  slug         String    @unique @default(cuid())
+  slug         String?   @unique
   customDomain String?   @unique
   template     String    @default("aevum-brutalist")
   publishedAt  DateTime?
