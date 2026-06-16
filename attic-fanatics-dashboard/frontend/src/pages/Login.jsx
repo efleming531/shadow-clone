@@ -1,87 +1,138 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
-
-const ForgeIcon = () => (
-  <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-    <path d="M12 2L9 7C9 9 10 11 12 12C14 11 15 9 15 7L12 2Z" fill="#f97316" />
-    <path d="M12 12C9.8 12 8 13.8 8 16C8 18.2 9.8 20 12 20C14.2 20 16 18.2 16 16C16 13.8 14.2 12 12 12Z" fill="#f97316" opacity="0.7" />
-    <path d="M6 8L3 14L7 15L6 8Z" fill="#f97316" opacity="0.4" />
-    <path d="M18 8L21 14L17 15L18 8Z" fill="#f97316" opacity="0.4" />
-  </svg>
-);
+import { MelvinLogin } from '../components/Melvin';
 
 export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fadingOut, setFadingOut] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const overlayRef = useRef(null);
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!email || !password) return toast.error('Please enter email and password');
+    setError('');
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/');
+      setFadingOut(true);
+      setTimeout(() => navigate('/'), 380);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Login failed');
-    } finally {
+      setError(err.response?.data?.error || 'Invalid credentials');
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-center">
-              <ForgeIcon />
-            </div>
+    <div
+      ref={overlayRef}
+      style={{
+        minHeight: '100vh',
+        background: '#0f1113',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: fadingOut ? 0 : 1,
+        transition: 'opacity 0.35s ease',
+      }}
+    >
+      {/* Melvin floats above card */}
+      <div style={{ marginBottom: 8 }}>
+        <MelvinLogin />
+      </div>
+
+      {/* Login card */}
+      <div style={{
+        background: '#161b22',
+        border: '1px solid #21262d',
+        borderRadius: 12,
+        padding: '36px 40px',
+        width: 360,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <p style={{ margin: 0, fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#6b7280' }}>
+            Welcome to
+          </p>
+          <h1 style={{ margin: '4px 0 0', fontSize: '1.6rem', fontWeight: 700, color: '#f1f5f9' }}>
+            The <span style={{ color: '#a78bfa' }}>Forge</span>
+          </h1>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', marginBottom: 6, letterSpacing: '0.05em' }}>
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="admin@atticfanatics.com"
+              required
+              style={{
+                width: '100%', background: '#0d1117', border: '1px solid #30363d',
+                borderRadius: 8, color: '#f1f5f9', padding: '10px 14px',
+                fontSize: '0.875rem', outline: 'none', transition: 'border-color 0.15s',
+              }}
+              onFocus={e => e.target.style.borderColor = '#a78bfa'}
+              onBlur={e => e.target.style.borderColor = '#30363d'}
+            />
           </div>
-          <h1 className="font-black text-3xl tracking-widest uppercase text-white">FORGE</h1>
-          <p className="text-text-secondary text-sm mt-1 tracking-wide">Business Operating System</p>
-        </div>
 
-        <div className="bg-bg-card border border-border rounded-2xl p-6 shadow-2xl">
-          <h2 className="font-bold text-lg text-white mb-5">Sign In</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@yourcompany.com"
-                className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
-                autoComplete="email"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
-                autoComplete="current-password"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-accent hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-lg transition-colors text-sm mt-2"
-            >
-              {loading ? 'Signing in...' : 'Sign In →'}
-            </button>
-          </form>
-        </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', marginBottom: 6, letterSpacing: '0.05em' }}>
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              style={{
+                width: '100%', background: '#0d1117', border: '1px solid #30363d',
+                borderRadius: 8, color: '#f1f5f9', padding: '10px 14px',
+                fontSize: '0.875rem', outline: 'none', transition: 'border-color 0.15s',
+              }}
+              onFocus={e => e.target.style.borderColor = '#a78bfa'}
+              onBlur={e => e.target.style.borderColor = '#30363d'}
+            />
+          </div>
 
-        <p className="text-center text-xs text-text-muted mt-4">FORGE · Powered by data</p>
+          {error && (
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#ef4444', textAlign: 'center' }}>
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              background: loading ? '#5b21b6' : '#7c3aed',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '11px 0',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              marginTop: 4,
+              transition: 'background 0.15s',
+              letterSpacing: '0.02em',
+            }}
+            onMouseEnter={e => { if (!loading) e.target.style.background = '#6d28d9'; }}
+            onMouseLeave={e => { if (!loading) e.target.style.background = '#7c3aed'; }}
+          >
+            {loading ? 'Entering…' : 'Enter the Forge'}
+          </button>
+        </form>
       </div>
     </div>
   );

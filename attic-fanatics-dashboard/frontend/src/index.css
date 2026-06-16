@@ -2,97 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --forge-bg: #E8E4DC;
-  --forge-ink: #0D0D0D;
-  --forge-card: #D8D4CC;
-  --forge-muted: #6A6A6A;
-  --forge-border: #C8C4BC;
-  --forge-cream: #F0ECE4;
-  --font-display: 'Bebas Neue', sans-serif;
-  --font-mono: 'Courier Prime', monospace;
-}
-
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background-color: #0a0a0a;
-  color: #ffffff;
-  font-family: 'Inter', sans-serif;
+  background: #0f1113;
+  color: #e2e8f0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
-::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #2a2a2a; }
-
-.recharts-tooltip-wrapper .recharts-default-tooltip {
-  background: #111111 !important;
-  border: 1px solid #1e1e1e !important;
-  border-radius: 8px !important;
-  color: #ffffff !important;
-}
-
-.animate-fade-in { animation: fadeIn 0.2s ease-out; }
-.animate-slide-in { animation: slideIn 0.25s ease-out; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #4a5568; }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(16px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; pointer-events: none; }
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes thinking-dot {
+  0%,80%,100% { opacity: 0.2; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-red {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-/* Kanban drag styles */
-.kanban-card-dragging {
-  opacity: 0.5;
-  cursor: grabbing;
-}
+.animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+.animate-fade-out { animation: fadeOut 0.35s ease-out forwards; }
 
-.kanban-column-over {
-  border-color: #f97316 !important;
-  background-color: rgba(249, 115, 22, 0.05) !important;
+.thinking-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #a78bfa;
+  animation: thinking-dot 1.4s ease-in-out infinite;
 }
+.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
 
-/* Input / form styles */
-.forge-input {
-  background: #161616;
-  border: 1px solid #1e1e1e;
+.pulse-red { animation: pulse-red 1s ease-in-out infinite; }
+
+/* markdown prose */
+.forge-prose { color: #cbd5e0; line-height: 1.65; font-size: 0.875rem; }
+.forge-prose h1 { font-size: 1.3rem; font-weight: 700; color: #f1f5f9; margin: 1rem 0 0.5rem; }
+.forge-prose h2 { font-size: 1.1rem; font-weight: 600; color: #f1f5f9; margin: 0.9rem 0 0.4rem; }
+.forge-prose h3 { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; margin: 0.75rem 0 0.35rem; }
+.forge-prose p { margin: 0 0 0.65rem; }
+.forge-prose ul, .forge-prose ol { padding-left: 1.4rem; margin: 0 0 0.65rem; }
+.forge-prose li { margin-bottom: 0.2rem; }
+.forge-prose strong { color: #f1f5f9; font-weight: 600; }
+.forge-prose em { color: #a78bfa; font-style: italic; }
+.forge-prose code {
+  background: #1e2330;
+  color: #a78bfa;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.82em;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.forge-prose pre {
+  background: #0d1117;
+  border: 1px solid #21262d;
   border-radius: 8px;
-  color: #ffffff;
-  padding: 8px 12px;
-  font-size: 14px;
-  transition: border-color 0.15s;
-  width: 100%;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+  position: relative;
 }
-
-.forge-input:focus {
-  outline: none;
-  border-color: #333333;
+.forge-prose pre code {
+  background: transparent;
+  color: #e2e8f0;
+  padding: 0;
+  font-size: 0.82rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
 }
-
-.forge-input::placeholder { color: #6b7280; }
-
-select.forge-input option { background: #161616; }
-
-/* Prose for markdown */
-.forge-prose h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; color: #ffffff; }
-.forge-prose h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #ffffff; }
-.forge-prose h3 { font-size: 1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #e5e7eb; }
-.forge-prose p { color: #9ca3af; margin-bottom: 0.75rem; line-height: 1.6; }
-.forge-prose ul, .forge-prose ol { color: #9ca3af; padding-left: 1.25rem; margin-bottom: 0.75rem; }
-.forge-prose li { margin-bottom: 0.25rem; }
-.forge-prose code { background: #1e1e1e; padding: 2px 6px; border-radius: 4px; font-size: 0.875em; color: #f97316; }
-.forge-prose strong { color: #ffffff; }
-
-/* Bottom nav safe-area inset for iPhone home indicator */
-.safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
-
-/* Tables scroll horizontally on small screens */
-.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.forge-prose blockquote {
+  border-left: 3px solid #a78bfa;
+  padding-left: 1rem;
+  color: #94a3b8;
+  margin: 0.75rem 0;
+  font-style: italic;
+}
+.forge-prose hr { border: none; border-top: 1px solid #21262d; margin: 1rem 0; }
+.forge-prose a { color: #a78bfa; text-decoration: underline; }

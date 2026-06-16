@@ -37,6 +37,7 @@ const pipelineRoutes = require('./src/routes/pipeline');
 const roofingQuotesRoutes = require('./src/routes/roofingQuotes');
 const { sitesHTMLRouter, sitesAPIRouter, assessmentRouter, writeSiteFiles } = require('./src/routes/sites');
 const { getTemplate, generateAssessmentHTML } = require('./src/utils/templates/index');
+const devStudioRoutes = require('./src/routes/devStudio');
 
 const { startAlertChecker } = require('./src/jobs/alertChecker');
 
@@ -107,6 +108,7 @@ app.use('/api/roofing-quotes', roofingQuotesRoutes);
 app.use('/site', sitesHTMLRouter);
 app.use('/api/sites', sitesAPIRouter);
 app.use('/api/site', assessmentRouter);
+app.use('/api/dev-studio', devStudioRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

@@ -94,6 +94,7 @@ model User {
   sops               SOP[]
   roofingQuotesCreated  RoofingQuote[] @relation("QuoteCreator")
   roofingQuotesApproved RoofingQuote[] @relation("QuoteApprover")
+  devConversations   DevConversation[] @relation("DevConversationOwner")
 
   @@map("users")
 }
@@ -530,7 +531,8 @@ model SiteConfig {
   publishedAt  DateTime?
   isLive       Boolean   @default(false)
 
-  deploys SiteDeploy[]
+  deploys          SiteDeploy[]
+  devConversations DevConversation[]
 
   @@map("site_configs")
 }
@@ -598,4 +600,34 @@ model RoofingQuote {
   updatedAt       DateTime  @updatedAt
 
   @@map("roofing_quotes")
+}
+
+// ── Dev Studio ─────────────────────────────────────────────────────────────
+
+model DevConversation {
+  id        String      @id @default(uuid())
+  title     String
+  ownerId   String
+  siteId    String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  messages  DevMessage[]
+  owner     User        @relation("DevConversationOwner", fields: [ownerId], references: [id])
+  site      SiteConfig? @relation(fields: [siteId], references: [id])
+
+  @@map("dev_conversations")
+}
+
+model DevMessage {
+  id             String          @id @default(uuid())
+  conversationId String
+  role           String
+  content        String          @db.Text
+  model          String?
+  mode           String?
+  stopReason     String?
+  createdAt      DateTime        @default(now())
+  conversation   DevConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("dev_messages")
 }
